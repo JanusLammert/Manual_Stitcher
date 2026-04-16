@@ -248,8 +248,28 @@ input[type=checkbox]{accent-color:var(--gold);}
     <div class="psec">
       <div class="ph" onclick="tsec('sct')"><div class="ph-t">CONTRAST</div><div class="chev o" id="chev-sct">▾</div></div>
       <div class="pb" id="sct">
-        <div class="srow"><label>MIN σ</label><input type="range" id="cmin" min="-5" max="0" step="0.1" value="-3" oninput="updC()"><div class="sv" id="cmin-v">-3.0</div></div>
-        <div class="srow"><label>MAX σ</label><input type="range" id="cmax" min="0" max="5" step="0.1" value="3" oninput="updC()"><div class="sv" id="cmax-v">3.0</div></div>
+        <!-- MODE toggle -->
+        <div class="fr" style="margin-bottom:6px">
+          <div class="fl">MODE</div>
+          <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1">
+            <button id="cm-sigma-btn" onclick="setCMode('sigma')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.5px">σ Auto</button>
+            <button id="cm-manual-btn" onclick="setCMode('manual')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px">Manual</button>
+          </div>
+        </div>
+        <!-- sigma mode -->
+        <div id="cmode-sigma">
+          <div class="srow"><label>MIN σ</label><input type="range" id="cmin" min="-5" max="0" step="0.05" value="-3" oninput="updC()"><div class="sv" id="cmin-v">-3.0</div></div>
+          <div class="srow"><label>MAX σ</label><input type="range" id="cmax" min="0" max="5" step="0.05" value="3" oninput="updC()"><div class="sv" id="cmax-v">3.0</div></div>
+        </div>
+        <!-- manual mode -->
+        <div id="cmode-manual" style="display:none">
+          <div class="fr"><div class="fl">DATA MIN</div><input type="number" class="fi" id="cman-lo" value="0" step="any" oninput="updC()"></div>
+          <div class="fr"><div class="fl">DATA MAX</div><input type="number" class="fi" id="cman-hi" value="255" step="any" oninput="updC()"></div>
+          <button class="btn sm pri" onclick="autoManualLimits()" style="width:100%;margin-bottom:6px">Auto from data</button>
+        </div>
+        <!-- shared advanced -->
+        <div class="srow"><label>GAMMA</label><input type="range" id="cgamma" min="0.2" max="3.0" step="0.05" value="1.0" oninput="updC()"><div class="sv" id="cgamma-v">1.00</div></div>
+        <div class="srow"><label>BRIGHT</label><input type="range" id="cbright" min="-100" max="100" step="1" value="0" oninput="updC()"><div class="sv" id="cbright-v">0</div></div>
         <div class="fr"><label class="fl">INVERT</label><input type="checkbox" id="inv-ck" onchange="updC()"></div>
         <div class="fr">
           <label class="fl">COLORMAP</label>
@@ -264,6 +284,7 @@ input[type=checkbox]{accent-color:var(--gold);}
             <option value="rdbu">RdBu (diverging)</option>
           </select>
         </div>
+        <button class="btn sm" onclick="resetContrast()" style="width:100%;margin-top:2px">Reset Contrast</button>
       </div>
     </div>
     <!-- THUMB PANEL -->
@@ -514,8 +535,25 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="fr"><div class="fl">MODE</div><select class="fs" id="xs-mode"><option value="x">Sum along X (helix)</option><option value="full">Full 2D Radon</option></select></div>
         <div class="fr"><div class="fl">OUT SIZE</div><input type="number" class="fi" id="xs-outsz" value="256" min="32" max="1024" step="32"></div>
         <div class="stit">DISPLAY</div>
-        <div class="srow"><label>MIN σ</label><input type="range" id="xs-cm" min="-5" max="0" step="0.1" value="-3" oninput="renderXS()"><div class="sv" id="xs-cm-v">-3.0</div></div>
-        <div class="srow"><label>MAX σ</label><input type="range" id="xs-cx" min="0" max="5" step="0.1" value="3" oninput="renderXS()"><div class="sv" id="xs-cx-v">3.0</div></div>
+        <!-- mode toggle for sinogram -->
+        <div class="fr" style="margin-bottom:5px">
+          <div class="fl">MODE</div>
+          <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1">
+            <button id="xs-cm-sigma-btn" onclick="setXSCMode('sigma')" style="flex:1;padding:2px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf">σ Auto</button>
+            <button id="xs-cm-manual-btn" onclick="setXSCMode('manual')" style="flex:1;padding:2px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)">Manual</button>
+          </div>
+        </div>
+        <div id="xs-cmode-sigma">
+          <div class="srow"><label>MIN σ</label><input type="range" id="xs-cm" min="-5" max="0" step="0.05" value="-3" oninput="renderXS()"><div class="sv" id="xs-cm-v">-3.0</div></div>
+          <div class="srow"><label>MAX σ</label><input type="range" id="xs-cx" min="0" max="5" step="0.05" value="3" oninput="renderXS()"><div class="sv" id="xs-cx-v">3.0</div></div>
+        </div>
+        <div id="xs-cmode-manual" style="display:none">
+          <div class="fr"><div class="fl">DATA MIN</div><input type="number" class="fi" id="xs-man-lo" value="0" step="any" oninput="renderXS()"></div>
+          <div class="fr"><div class="fl">DATA MAX</div><input type="number" class="fi" id="xs-man-hi" value="255" step="any" oninput="renderXS()"></div>
+          <button class="btn sm pri" onclick="xsAutoManual()" style="width:100%;margin-bottom:5px">Auto from data</button>
+        </div>
+        <div class="srow"><label>GAMMA</label><input type="range" id="xs-gamma" min="0.2" max="3.0" step="0.05" value="1.0" oninput="renderXS()"><div class="sv" id="xs-gamma-v">1.00</div></div>
+        <div class="srow"><label>BRIGHT</label><input type="range" id="xs-bright" min="-100" max="100" step="1" value="0" oninput="renderXS()"><div class="sv" id="xs-bright-v">0</div></div>
         <div class="fr"><label class="fl">INVERT</label><input type="checkbox" id="xs-inv" onchange="renderXS()"></div>
         <div class="ibox">
           <div>Projs: <span class="v" id="xs-np">—</span></div><div>Rays: <span class="v" id="xs-nr">—</span></div><div>Out: <span class="v" id="xs-os">—</span></div>
@@ -531,7 +569,20 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="mcrow">
           <div class="mpane" style="flex:.8"><div class="plbl">ROI PATCH<em id="xs-pi2"></em></div><div class="pwrap"><canvas id="xs-pc"></canvas></div></div>
           <div class="mpane"><div class="plbl">SINOGRAM (θ vs t)<em id="xs-si"></em></div><div class="pwrap"><canvas id="xs-sc"></canvas></div></div>
-          <div class="mpane"><div class="plbl">CROSS-SECTION (FBP)<em id="xs-ri"></em></div><div class="pwrap"><canvas id="xs-rc"></canvas></div></div>
+          <div class="mpane" id="xs-recon-pane">
+            <div class="plbl" style="display:flex;align-items:center;gap:0">
+              <span>CROSS-SECTION (FBP)</span><em id="xs-ri"></em>
+              <div style="margin-left:auto;display:flex;gap:2px;padding-right:4px">
+                <button onclick="xsZoom(1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1" title="Zoom in">+</button>
+                <button onclick="xsZoom(1/1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1" title="Zoom out">−</button>
+                <button onclick="xsZoomReset()" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:9px;line-height:1" title="Fit">⊡</button>
+              </div>
+            </div>
+            <!-- zoomable viewport: offscreen FBP canvas → displayed via a 2D panzoom canvas -->
+            <div style="flex:1;position:relative;overflow:hidden;background:#000" id="xs-vp-wrap">
+              <canvas id="xs-vp" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -631,6 +682,14 @@ let roiDragType=null; // 'move'|'nw'|'ne'|'sw'|'se'|null
 let roiDragStart=null;
 let fbpData=null, fbpSz=0;
 let dispScale=1, cMin=-3, cMax=3, inverted=false;
+let cMode='sigma';   // 'sigma' | 'manual'
+let cManLo=0, cManHi=255;
+let cGamma=1.0, cBright=0;
+// XS (sinogram) contrast state (independent)
+let xsCMode='sigma', xsManLo=0, xsManHi=255, xsGamma=1.0, xsBright=0;
+// XS viewport pan/zoom
+let xsVpZ=1, xsVpX=0, xsVpY=0;
+let xsVpDrag=null;
 let thumbH=56;
 
 const MC=document.getElementById('mc');
@@ -645,7 +704,7 @@ let _rafPending=false;
 
 function cacheKey(inst){
   // All parameters that affect pixel content
-  return `${inst.classId}|${inst.cropW??'N'}|${inst.cropH??'N'}|${inst.cropOffX}|${inst.cropOffY}|${inst.rotate}|${inst.mirrorX?1:0}|${inst.mirrorY?1:0}|${cMin.toFixed(2)}|${cMax.toFixed(2)}|${inverted?1:0}|${document.getElementById('colormap')?.value||'gray'}`;
+  return `${inst.classId}|${inst.cropW??'N'}|${inst.cropH??'N'}|${inst.cropOffX}|${inst.cropOffY}|${inst.rotate}|${inst.mirrorX?1:0}|${inst.mirrorY?1:0}|${cMode}|${cMin.toFixed(2)}|${cMax.toFixed(2)}|${cManLo}|${cManHi}|${cGamma.toFixed(2)}|${cBright}|${inverted?1:0}|${document.getElementById('colormap')?.value||'gray'}`;
 }
 
 function invalidateAllCache(){renderCache.clear();}
@@ -693,6 +752,7 @@ function init(){
   document.getElementById('fi-load').addEventListener('change',loadStateFile);
   document.getElementById('px-inp').addEventListener('input',updPxLbl);
   initSidebarResize();
+  initXSViewport();
   render();
 }
 function resizeMC(){MC.width=CW.clientWidth;MC.height=CW.clientHeight;renderNow();}
@@ -775,15 +835,30 @@ function clsToID(cls,inst,cmap){
   const cx=Math.floor(nx/2)+(inst.cropOffX||0),cy=Math.floor(ny/2)+(inst.cropOffY||0);
   const x0=cx-Math.floor(cw/2),y0=cy-Math.floor(ch/2);
   const lut=cmap||getCmap();
-  // Running mean+variance (Welford) — no O(N) array allocation
-  let mn=0,M2=0,n=0;
-  for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){const sx=x0+x,sy=y0+y;if(sx>=0&&sx<nx&&sy>=0&&sy<ny){const v=raw[sy*nx+sx];n++;const delta=v-mn;mn+=delta/n;M2+=delta*(v-mn);}}
-  const sd=n>1?Math.sqrt(M2/(n-1))||1:1;
-  const lo=mn+cMin*sd,hi=mn+cMax*sd,rng=hi-lo||1;
+  let lo,hi;
+  if(cMode==='manual'){
+    lo=cManLo; hi=cManHi;
+  } else {
+    // Welford running mean+variance
+    let mn=0,M2=0,n=0;
+    for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){const sx=x0+x,sy=y0+y;if(sx>=0&&sx<nx&&sy>=0&&sy<ny){const v=raw[sy*nx+sx];n++;const d=v-mn;mn+=d/n;M2+=d*(v-mn);}}
+    const sd=n>1?Math.sqrt(M2/(n-1))||1:1;
+    lo=mn+cMin*sd; hi=mn+cMax*sd;
+  }
+  const rng=hi-lo||1;
+  const bright=cBright/100;
+  const gamma=cGamma;
   const id=new ImageData(cw,ch);
   for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){
     const sx=x0+x,sy=y0+y;let t=.5;
-    if(sx>=0&&sx<nx&&sy>=0&&sy<ny){t=(raw[sy*nx+sx]-lo)/rng;t=t<0?0:t>1?1:t;if(inverted)t=1-t;}
+    if(sx>=0&&sx<nx&&sy>=0&&sy<ny){
+      t=(raw[sy*nx+sx]-lo)/rng;
+      t=t<0?0:t>1?1:t;
+      if(gamma!==1)t=Math.pow(t,gamma);
+      t=t+bright;
+      t=t<0?0:t>1?1:t;
+      if(inverted)t=1-t;
+    }
     const ci=Math.round(t*255)*3;
     const i=(y*cw+x)*4;id.data[i]=lut[ci];id.data[i+1]=lut[ci+1];id.data[i+2]=lut[ci+2];id.data[i+3]=255;
   }
@@ -1169,7 +1244,49 @@ function applyOpt(){
 // ═══════════════════════ GLOBAL SETTINGS ═══════════════════════
 function setSrc(s){source=s;document.getElementById('src-r').classList.toggle('active',s==='relion');document.getElementById('src-c').classList.toggle('active',s==='cryosparc');}
 function updPxLbl(){document.getElementById('sb-px').textContent=(+document.getElementById('px-inp').value||1).toFixed(4)+' Å';updMeas();}
-function updC(){cMin=+document.getElementById('cmin').value;cMax=+document.getElementById('cmax').value;inverted=document.getElementById('inv-ck').checked;document.getElementById('cmin-v').textContent=cMin.toFixed(1);document.getElementById('cmax-v').textContent=cMax.toFixed(1);invalidateAllCache();refreshThumbsDraw();render();}
+function setCMode(m){
+  cMode=m;
+  document.getElementById('cm-sigma-btn').style.background=m==='sigma'?'var(--navy)':'var(--pan3)';
+  document.getElementById('cm-sigma-btn').style.color=m==='sigma'?'#ddf':'var(--txt-d)';
+  document.getElementById('cm-manual-btn').style.background=m==='manual'?'var(--navy)':'var(--pan3)';
+  document.getElementById('cm-manual-btn').style.color=m==='manual'?'#ddf':'var(--txt-d)';
+  document.getElementById('cmode-sigma').style.display=m==='sigma'?'':'none';
+  document.getElementById('cmode-manual').style.display=m==='manual'?'':'none';
+  updC();
+}
+function autoManualLimits(){
+  // Scan all loaded raw data to find global min/max
+  let mn=Infinity,mx=-Infinity;
+  classes.forEach(cls=>{for(let i=0;i<cls.raw.length;i++){mn=Math.min(mn,cls.raw[i]);mx=Math.max(mx,cls.raw[i]);}});
+  if(!isFinite(mn)){mn=0;mx=255;}
+  document.getElementById('cman-lo').value=mn.toFixed(2);
+  document.getElementById('cman-hi').value=mx.toFixed(2);
+  cManLo=mn;cManHi=mx;
+  updC();
+}
+function resetContrast(){
+  cMode='sigma';cMin=-3;cMax=3;cGamma=1;cBright=0;inverted=false;
+  document.getElementById('cmin').value=-3;document.getElementById('cmax').value=3;
+  document.getElementById('cgamma').value=1;document.getElementById('cbright').value=0;
+  document.getElementById('inv-ck').checked=false;
+  document.getElementById('cmin-v').textContent='-3.0';document.getElementById('cmax-v').textContent='3.0';
+  document.getElementById('cgamma-v').textContent='1.00';document.getElementById('cbright-v').textContent='0';
+  setCMode('sigma');
+}
+function updC(){
+  cMin=+document.getElementById('cmin').value;
+  cMax=+document.getElementById('cmax').value;
+  cManLo=+document.getElementById('cman-lo').value||0;
+  cManHi=+document.getElementById('cman-hi').value||255;
+  cGamma=+document.getElementById('cgamma').value||1;
+  cBright=+document.getElementById('cbright').value||0;
+  inverted=document.getElementById('inv-ck').checked;
+  document.getElementById('cmin-v').textContent=cMin.toFixed(1);
+  document.getElementById('cmax-v').textContent=cMax.toFixed(1);
+  document.getElementById('cgamma-v').textContent=cGamma.toFixed(2);
+  document.getElementById('cbright-v').textContent=cBright;
+  invalidateAllCache();refreshThumbsDraw();render();
+}
 function setDScale(v){dispScale=v/100;document.getElementById('dscale-v').textContent=v+'%';render();}
 function updMeas(){if(!msA||!msB)return;const px=+document.getElementById('px-inp').value||1,dx=msB.x-msA.x,dy=msB.y-msA.y,dp=Math.sqrt(dx*dx+dy*dy)/dispScale;const el=document.getElementById('sb-meas');el.style.display='';el.textContent=`MEAS  ${dp.toFixed(1)} px  ·  ${(dp*px).toFixed(2)} Å`;}
 function tsec(id){const el=document.getElementById(id),ch=document.getElementById('chev-'+id);el.classList.toggle('col');ch.classList.toggle('o',!el.classList.contains('col'));}
@@ -1296,12 +1413,126 @@ async function runRadon(){
   const entropyBits=shannonEntropy(recon);
   document.getElementById('xs-entropy').textContent=entropyBits.toFixed(4);
   document.getElementById('xs-ent-wrap').style.display='';
-  renderXS();document.getElementById('xs-ri').textContent=`${outSz}×${outSz}`;
+  renderXS();
+  // Fit viewport to new image
+  setTimeout(xsZoomReset,50);
+  document.getElementById('xs-ri').textContent=`${outSz}×${outSz}`;
   setTimeout(()=>document.getElementById('xs-pw').style.display='none',600);
 }
-function renderXS(){if(!fbpData)return;const cm=+document.getElementById('xs-cm').value,cx=+document.getElementById('xs-cx').value,inv=document.getElementById('xs-inv').checked;document.getElementById('xs-cm-v').textContent=cm.toFixed(1);document.getElementById('xs-cx-v').textContent=cx.toFixed(1);drawF32(fbpData,fbpSz,fbpSz,document.getElementById('xs-rc'),cm,cx,inv);}
+function setXSCMode(m){
+  xsCMode=m;
+  document.getElementById('xs-cm-sigma-btn').style.background=m==='sigma'?'var(--navy)':'var(--pan3)';
+  document.getElementById('xs-cm-sigma-btn').style.color=m==='sigma'?'#ddf':'var(--txt-d)';
+  document.getElementById('xs-cm-manual-btn').style.background=m==='manual'?'var(--navy)':'var(--pan3)';
+  document.getElementById('xs-cm-manual-btn').style.color=m==='manual'?'#ddf':'var(--txt-d)';
+  document.getElementById('xs-cmode-sigma').style.display=m==='sigma'?'':'none';
+  document.getElementById('xs-cmode-manual').style.display=m==='manual'?'':'none';
+  renderXS();
+}
+function xsAutoManual(){
+  if(!fbpData)return;
+  let mn=Infinity,mx=-Infinity;
+  for(let i=0;i<fbpData.length;i++){mn=Math.min(mn,fbpData[i]);mx=Math.max(mx,fbpData[i]);}
+  document.getElementById('xs-man-lo').value=mn.toFixed(4);
+  document.getElementById('xs-man-hi').value=mx.toFixed(4);
+  xsManLo=mn;xsManHi=mx;
+  renderXS();
+}
+
+function renderXS(){
+  if(!fbpData)return;
+  const cm=+document.getElementById('xs-cm').value,cx2=+document.getElementById('xs-cx').value;
+  const inv=document.getElementById('xs-inv').checked;
+  const gamma=+document.getElementById('xs-gamma').value||1;
+  const bright=(+document.getElementById('xs-bright').value||0)/100;
+  document.getElementById('xs-cm-v').textContent=cm.toFixed(1);
+  document.getElementById('xs-cx-v').textContent=cx2.toFixed(1);
+  document.getElementById('xs-gamma-v').textContent=gamma.toFixed(2);
+  document.getElementById('xs-bright-v').textContent=document.getElementById('xs-bright').value;
+  xsGamma=gamma;xsBright=bright;
+  xsManLo=+document.getElementById('xs-man-lo').value||0;
+  xsManHi=+document.getElementById('xs-man-hi').value||255;
+  // Render fbpData into the hidden canvas xs-rc, then draw into viewport
+  const rc=document.getElementById('xs-rc');
+  drawF32(fbpData,fbpSz,fbpSz,rc,cm,cx2,inv,gamma,bright,xsCMode,xsManLo,xsManHi);
+  drawXSViewport();
+}
+
+function drawXSViewport(){
+  const src=document.getElementById('xs-rc');
+  const vp=document.getElementById('xs-vp');
+  const wrap=document.getElementById('xs-vp-wrap');
+  if(!wrap)return;
+  vp.width=wrap.clientWidth;
+  vp.height=wrap.clientHeight;
+  const ctx=vp.getContext('2d');
+  ctx.fillStyle='#000';ctx.fillRect(0,0,vp.width,vp.height);
+  ctx.save();
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(src, xsVpX, xsVpY, src.width*xsVpZ, src.height*xsVpZ);
+  ctx.restore();
+  // zoom indicator
+  ctx.fillStyle='rgba(219,157,71,.7)';ctx.font='10px "IBM Plex Mono"';
+  ctx.fillText(`${Math.round(xsVpZ*100)}%`,6,16);
+}
+
+function xsZoomReset(){
+  const src=document.getElementById('xs-rc');
+  const wrap=document.getElementById('xs-vp-wrap');
+  if(!src.width||!wrap)return;
+  xsVpZ=Math.min(wrap.clientWidth/src.width,wrap.clientHeight/src.height);
+  xsVpX=(wrap.clientWidth-src.width*xsVpZ)/2;
+  xsVpY=(wrap.clientHeight-src.height*xsVpZ)/2;
+  drawXSViewport();
+}
+function xsZoom(factor){
+  const wrap=document.getElementById('xs-vp-wrap');
+  const cx=wrap.clientWidth/2,cy=wrap.clientHeight/2;
+  const wx=(cx-xsVpX)/xsVpZ,wy=(cy-xsVpY)/xsVpZ;
+  xsVpZ=Math.max(0.1,Math.min(20,xsVpZ*factor));
+  xsVpX=cx-wx*xsVpZ;xsVpY=cy-wy*xsVpZ;
+  drawXSViewport();
+}
+
+function initXSViewport(){
+  const vp=document.getElementById('xs-vp');
+  const wrap=document.getElementById('xs-vp-wrap');
+  if(!vp||!wrap)return;
+  vp.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const r=vp.getBoundingClientRect();
+    const mx=e.clientX-r.left,my=e.clientY-r.top;
+    const factor=e.deltaY<0?1.15:1/1.15;
+    const wx=(mx-xsVpX)/xsVpZ,wy=(my-xsVpY)/xsVpZ;
+    xsVpZ=Math.max(0.1,Math.min(20,xsVpZ*factor));
+    xsVpX=mx-wx*xsVpZ;xsVpY=my-wy*xsVpZ;
+    drawXSViewport();
+  },{passive:false});
+  let vpDrag=null;
+  vp.addEventListener('mousedown',e=>{vpDrag={sx:e.clientX,sy:e.clientY,ox:xsVpX,oy:xsVpY};e.preventDefault();});
+  window.addEventListener('mousemove',e=>{if(!vpDrag)return;xsVpX=vpDrag.ox+(e.clientX-vpDrag.sx);xsVpY=vpDrag.oy+(e.clientY-vpDrag.sy);drawXSViewport();});
+  window.addEventListener('mouseup',()=>{vpDrag=null;});
+}
+
+// drawF32 — now supports gamma, brightness, manual mode
+function drawF32(data,w,h,canv,sigMin,sigMax,inv,gamma=1,bright=0,mode='sigma',manLo=0,manHi=255){
+  canv.width=w;canv.height=h;
+  let lo,hi;
+  if(mode==='manual'){lo=manLo;hi=manHi;}
+  else{const mn=data.reduce((a,b)=>a+b,0)/data.length,sd=Math.sqrt(data.reduce((a,b)=>a+(b-mn)**2,0)/data.length)||1;lo=mn+sigMin*sd;hi=mn+sigMax*sd;}
+  const rng=hi-lo||1;
+  const id=canv.getContext('2d').createImageData(w,h);
+  for(let i=0;i<data.length;i++){
+    let v=(data[i]-lo)/rng;v=v<0?0:v>1?1:v;
+    if(gamma!==1)v=Math.pow(v,gamma);
+    v=v+bright;v=v<0?0:v>1?1:v;
+    if(inv)v=1-v;v=Math.round(v*255);
+    id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255;
+  }
+  canv.getContext('2d').putImageData(id,0,0);
+}
+
 function setPg(p,pct,lbl){document.getElementById(p+'-pg').style.width=pct+'%';const l=document.getElementById(p+'-pl');if(l)l.textContent=lbl;}
-function drawF32(data,w,h,canv,sm,sx,inv){canv.width=w;canv.height=h;const mn=data.reduce((a,b)=>a+b,0)/data.length,sd=Math.sqrt(data.reduce((a,b)=>a+(b-mn)**2,0)/data.length)||1,lo=mn+sm*sd,hi=mn+sx*sd,rng=hi-lo||1;const id=canv.getContext('2d').createImageData(w,h);for(let i=0;i<data.length;i++){let v=(data[i]-lo)/rng;v=Math.max(0,Math.min(1,v));if(inv)v=1-v;v=Math.round(v*255);id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255;}canv.getContext('2d').putImageData(id,0,0);}
 
 // ═══════════════════════ 3D ═══════════════════════
 function open3D(){if(!fbpData){alert('Run FBP first.');return;}closeMo('xs-modal');drawF32(fbpData,fbpSz,fbpSz,document.getElementById('v3d-xc'),-3,3,false);document.getElementById('v3d-xi').textContent=`${fbpSz}×${fbpSz}`;document.getElementById('v3d-r').value=Math.floor(fbpSz/2);updVI();openMo('v3d-modal');}
