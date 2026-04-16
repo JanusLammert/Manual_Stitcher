@@ -1,18 +1,3 @@
-<!--
-    The Program allows to manuly stitch 2D classes and generate an inital 3D-Volume besed on the stitching.
-    Copyright (C) 2026  Janus Lammert
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
--->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -374,7 +359,18 @@ input[type=checkbox]{accent-color:var(--gold);}
       <div class="fr" style="margin-top:5px"><div class="fl">OFF X</div><input type="number" class="fi" id="fp-ox" value="0" step="1" oninput="applyInstCrop()"></div>
       <div class="fr"><div class="fl">OFF Y</div><input type="number" class="fi" id="fp-oy" value="0" step="1" oninput="applyInstCrop()"></div>
     </div>
-    <div style="height:8px"></div>
+    <div class="fpsec">Z-ORDER</div>
+    <div class="tcol" style="margin-bottom:4px">
+      <button class="btn sm" onclick="zBring('front')" title="Bring to front">⬆ Front</button>
+      <button class="btn sm" onclick="zBring('back')"  title="Send to back">⬇ Back</button>
+    </div>
+    <div class="tcol" style="margin-bottom:6px">
+      <button class="btn sm" onclick="zBring('fwd')"   title="Move one step forward">↑ Fwd</button>
+      <button class="btn sm" onclick="zBring('bwd')"   title="Move one step back">↓ Bwd</button>
+    </div>
+    <div class="fpsec">EXPORT</div>
+    <button class="btn sm gld" onclick="openROIExport()" style="width:100%;margin-bottom:6px">◈ Export ROI as Image…</button>
+    <div style="height:2px"></div>
     <button class="btn dng" onclick="removeSelected()">Remove Instance</button>
   </div>
 </div>
@@ -420,6 +416,84 @@ input[type=checkbox]{accent-color:var(--gold);}
   <div style="padding:0 10px 8px;display:flex;gap:5px">
     <button class="btn pri sm" onclick="snapROIToContent()" style="flex:1;width:auto">Snap to Fibril Center</button>
     <button class="btn sm" onclick="snapROIToCanvas()" style="flex:1;width:auto">Canvas Center</button>
+  </div>
+</div>
+
+<!-- ROI EXPORT MODAL -->
+<div class="mo" id="roi-export-modal">
+  <div class="mbox" style="width:540px;max-height:90vh">
+    <div class="mh">
+      <div class="mt">◈  Export ROI as Image</div>
+      <div class="mc" onclick="closeMo('roi-export-modal')">✕</div>
+    </div>
+    <div class="mbody" style="flex-direction:column;padding:16px;gap:14px;overflow-y:auto">
+
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <!-- preview -->
+        <div style="flex-shrink:0">
+          <div class="stit">PREVIEW</div>
+          <div style="border:1px solid var(--bdr);border-radius:3px;overflow:hidden;background:#000;width:200px;height:200px;display:flex;align-items:center;justify-content:center">
+            <canvas id="roi-exp-prev" style="image-rendering:pixelated;max-width:200px;max-height:200px"></canvas>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);margin-top:4px;text-align:center" id="roi-exp-info">—</div>
+        </div>
+
+        <!-- controls -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:9px">
+          <div>
+            <div class="stit">MODE</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt);cursor:pointer">
+                <input type="radio" name="roi-exp-mode" value="top" id="roi-mode-top" checked onchange="updROIExpPreview()" style="accent-color:var(--gold)">
+                Topmost visible layer only
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt);cursor:pointer">
+                <input type="radio" name="roi-exp-mode" value="all" id="roi-mode-all" onchange="updROIExpPreview()" style="accent-color:var(--gold)">
+                All layers composited
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt);cursor:pointer">
+                <input type="radio" name="roi-exp-mode" value="avg" id="roi-mode-avg" onchange="updROIExpPreview()" style="accent-color:var(--gold)">
+                Average of all overlapping layers
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <div class="stit">OPTIONS</div>
+            <label style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt);cursor:pointer;margin-bottom:5px">
+              <input type="checkbox" id="roi-exp-fullop" checked onchange="updROIExpPreview()" style="accent-color:var(--gold)">
+              Full opacity (ignore instance opacity settings)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt);cursor:pointer;margin-bottom:5px">
+              <input type="checkbox" id="roi-exp-bars" onchange="updROIExpPreview()" style="accent-color:var(--gold)">
+              Include stack colour bars
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt);cursor:pointer">
+              <input type="checkbox" id="roi-exp-black" checked onchange="updROIExpPreview()" style="accent-color:var(--gold)">
+              Black background
+            </label>
+          </div>
+
+          <div>
+            <div class="stit">SCALE</div>
+            <div class="fr" style="margin-bottom:0">
+              <div class="fl">SCALE ×</div>
+              <input type="number" class="fi" id="roi-exp-scale" value="1" min="1" max="8" step="1" onchange="updROIExpPreview()">
+              <span class="tblbl">(pixel upscale)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mft">
+      <button class="btn" style="width:auto;padding:5px 14px" onclick="updROIExpPreview()">↺ Refresh Preview</button>
+      <div style="flex:1"></div>
+      <button class="btn gld" style="width:auto;padding:6px 20px" onclick="downloadROIExport()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download PNG
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1236,6 +1310,136 @@ function sXS(r,iy){const sz=fbpSz,cx=sz/2,cy=sz/2,ax=document.getElementById('v3
 function prevSl(){if(!fbpData)return;updVI();const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,bXZ=r*2,bY=sz;const eq=new Float32Array(bXZ*bXZ),mid=Math.floor(bY/2);for(let iz=0;iz<bXZ;iz++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;eq[iz*bXZ+ix]=sXS(rr,mid);}drawF32(eq,bXZ,bXZ,document.getElementById('v3d-ec'),-3,3,false);document.getElementById('v3d-ei').textContent=`${bXZ}×${bXZ}`;const mer=new Float32Array(bXZ*bY);for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,rr=Math.abs(dx);if(rr>r||(co>0&&rr>co))continue;mer[iy*bXZ+ix]=sXS(rr,iy);}drawF32(mer,bXZ,bY,document.getElementById('v3d-mc2'),-3,3,false);document.getElementById('v3d-mi').textContent=`${bXZ}×${bY}`;}
 async function comp3D(){if(!fbpData)return;const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,px=+document.getElementById('px-inp').value||1,bXZ=r*2,bY=sz,btn=document.getElementById('v3d-btn');btn.disabled=true;document.getElementById('v3d-pw').style.display='';setPg('v3d',0,'Alloc…');await yf();const vol=new Float32Array(bXZ*bY*bXZ);for(let iz=0;iz<bXZ;iz++){for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;vol[iz*bY*bXZ+iy*bXZ+ix]=sXS(rr,iy);}if(iz%4===0){setPg('v3d',iz/bXZ*94,`Layer ${iz}/${bXZ}`);await yf();}}setPg('v3d',97,'MRC…');await yf();const buf=wMRC(vol,bXZ,bY,bXZ,px);const blob=new Blob([buf],{type:'application/octet-stream'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='reconstruction_3d.mrc';a.click();URL.revokeObjectURL(url);setPg('v3d',100,'Done');btn.disabled=false;setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);}
 function wMRC(data,nx,ny,nz,pixSz){const buf=new ArrayBuffer(1024+nx*ny*nz*4),dv=new DataView(buf);dv.setInt32(0,nx,true);dv.setInt32(4,ny,true);dv.setInt32(8,nz,true);dv.setInt32(12,2,true);dv.setInt32(28,nx,true);dv.setInt32(32,ny,true);dv.setInt32(36,nz,true);dv.setFloat32(40,nx*pixSz,true);dv.setFloat32(44,ny*pixSz,true);dv.setFloat32(48,nz*pixSz,true);dv.setFloat32(52,90,true);dv.setFloat32(56,90,true);dv.setFloat32(60,90,true);dv.setInt32(64,1,true);dv.setInt32(68,2,true);dv.setInt32(72,3,true);let mn=Infinity,mx=-Infinity,sm=0;for(let i=0;i<data.length;i++){mn=Math.min(mn,data[i]);mx=Math.max(mx,data[i]);sm+=data[i];}dv.setFloat32(76,mn,true);dv.setFloat32(80,mx,true);dv.setFloat32(84,sm/data.length,true);dv.setInt32(88,1,true);[77,65,80,32].forEach((c,i)=>dv.setUint8(208+i,c));dv.setUint8(212,0x44);dv.setUint8(213,0x44);new Float32Array(buf,1024).set(data);return buf;}
+
+// ═══════════════════════ Z-ORDER ═══════════════════════
+function zBring(dir){
+  if(selUid===null)return;
+  pushUndo();
+  const idx=instances.findIndex(i=>i.uid===selUid);
+  if(idx<0)return;
+  const inst=instances[idx];
+  instances.splice(idx,1);
+  if(dir==='front') instances.push(inst);
+  else if(dir==='back') instances.unshift(inst);
+  else if(dir==='fwd') instances.splice(Math.min(instances.length,idx+1),0,inst);
+  else if(dir==='bwd') instances.splice(Math.max(0,idx-1),0,inst);
+  render();
+}
+
+// ═══════════════════════ ROI EXPORT ═══════════════════════
+function openROIExport(){
+  if(!roi){alert('Draw an ROI first (R key).');return;}
+  openMo('roi-export-modal');
+  updROIExpPreview();
+}
+
+function _buildROICanvas(){
+  if(!roi)return null;
+  // Find instances whose bounding box overlaps the ROI
+  const rx=roi.x,ry=roi.y,rw=roi.w,rh=roi.h;
+  const overlapping=instances.filter(inst=>{
+    const w=iDispW(inst),h=iDispH(inst);
+    return inst.x<rx+rw && inst.x+w>rx && inst.y<ry+rh && inst.y+h>ry;
+  });
+  if(!overlapping.length)return null;
+
+  const mode=document.querySelector('input[name="roi-exp-mode"]:checked')?.value||'all';
+  const fullOp=document.getElementById('roi-exp-fullop').checked;
+  const showBars=document.getElementById('roi-exp-bars').checked;
+  const blackBg=document.getElementById('roi-exp-black').checked;
+  const scale=Math.max(1,Math.round(+document.getElementById('roi-exp-scale').value||1));
+
+  const outW=Math.round(rw)*scale, outH=Math.round(rh)*scale;
+  if(outW<1||outH<1)return null;
+
+  const cmap=getCmap();
+  const ec=document.createElement('canvas');ec.width=outW;ec.height=outH;
+  const ex=ec.getContext('2d');
+  if(blackBg){ex.fillStyle='#000';ex.fillRect(0,0,outW,outH);}
+
+  if(mode==='avg'){
+    // Average: accumulate into Float32 R,G,B arrays, divide by count per pixel
+    const acc=new Float32Array(outW*outH*3);
+    const cnt=new Float32Array(outW*outH);
+    overlapping.forEach(inst=>{
+      const cls=getCls(inst.classId);if(!cls)return;
+      const cc=clsToCanvas(cls,inst,cmap);
+      const dw=iDispW(inst)*scale,dh=iDispH(inst)*scale;
+      const dx=(inst.x-rx)*scale,dy=(inst.y-ry)*scale;
+      // Draw instance to a temp canvas cropped to output size
+      const tmp=document.createElement('canvas');tmp.width=outW;tmp.height=outH;
+      const tx=tmp.getContext('2d');
+      if(showBars){
+        tx.drawImage(cc,dx,dy,dw,dh);
+        tx.fillStyle=stackColor(cls);tx.fillRect(dx,dy,dw,BAR_H*scale);tx.fillRect(dx,dy+dh-BAR_H*scale,dw,BAR_H*scale);
+      }else{
+        tx.drawImage(cc,dx,dy,dw,dh);
+      }
+      const id=tx.getImageData(0,0,outW,outH);
+      for(let i=0;i<outW*outH;i++){
+        const a=id.data[i*4+3]/255;if(a<.01)continue;
+        acc[i*3]+=id.data[i*4]*a;acc[i*3+1]+=id.data[i*4+1]*a;acc[i*3+2]+=id.data[i*4+2]*a;cnt[i]+=a;
+      }
+    });
+    const id2=ex.createImageData(outW,outH);
+    for(let i=0;i<outW*outH;i++){
+      const c=cnt[i];
+      id2.data[i*4]  =c>0?Math.round(acc[i*3]/c)  :0;
+      id2.data[i*4+1]=c>0?Math.round(acc[i*3+1]/c):0;
+      id2.data[i*4+2]=c>0?Math.round(acc[i*3+2]/c):0;
+      id2.data[i*4+3]=c>0?255:blackBg?255:0;
+    }
+    ex.putImageData(id2,0,0);
+
+  } else if(mode==='top'){
+    // Only the topmost (last in draw order) instance that overlaps the pixel
+    // Draw from bottom to top so the topmost lands last, but use destination-over? No — just draw top only.
+    // Find the single topmost overlapping instance and draw it
+    const top=overlapping[overlapping.length-1];
+    const cls=getCls(top.classId);if(!cls)return null;
+    const cc=clsToCanvas(cls,top,cmap);
+    const dw=iDispW(top)*scale,dh=iDispH(top)*scale;
+    const dx=(top.x-rx)*scale,dy=(top.y-ry)*scale;
+    const op=fullOp?1:top.opacity;
+    ex.save();ex.globalAlpha=op;ex.drawImage(cc,dx,dy,dw,dh);
+    if(showBars){ex.globalAlpha=op;ex.fillStyle=stackColor(cls);ex.fillRect(dx,dy,dw,BAR_H*scale);ex.fillRect(dx,dy+dh-BAR_H*scale,dw,BAR_H*scale);}
+    ex.restore();
+
+  } else {
+    // All composited (normal painter's algorithm)
+    overlapping.forEach(inst=>{
+      const cls=getCls(inst.classId);if(!cls)return;
+      const cc=clsToCanvas(cls,inst,cmap);
+      const dw=iDispW(inst)*scale,dh=iDispH(inst)*scale;
+      const dx=(inst.x-rx)*scale,dy=(inst.y-ry)*scale;
+      const op=fullOp?1:inst.opacity;
+      ex.save();ex.globalAlpha=op;ex.drawImage(cc,dx,dy,dw,dh);
+      if(showBars){ex.fillStyle=stackColor(cls);ex.fillRect(dx,dy,dw,BAR_H*scale);ex.fillRect(dx,dy+dh-BAR_H*scale,dw,BAR_H*scale);}
+      ex.restore();
+    });
+  }
+  return{canvas:ec,overlapping:overlapping.length,outW,outH};
+}
+
+function updROIExpPreview(){
+  const result=_buildROICanvas();
+  const prev=document.getElementById('roi-exp-prev');
+  const info=document.getElementById('roi-exp-info');
+  if(!result){prev.width=1;prev.height=1;info.textContent='No instances overlap the ROI';return;}
+  const{canvas:ec,overlapping,outW,outH}=result;
+  prev.width=outW;prev.height=outH;
+  prev.getContext('2d').drawImage(ec,0,0);
+  info.textContent=`${outW}×${outH} px · ${overlapping} instance${overlapping!==1?'s':''}`;
+}
+
+function downloadROIExport(){
+  const result=_buildROICanvas();
+  if(!result){alert('No instances overlap the ROI.');return;}
+  result.canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download='roi_export.png';a.click();URL.revokeObjectURL(url);
+  });
+}
 
 init();updPxLbl();updOC();updUndoUI();
 </script>
