@@ -113,7 +113,6 @@ No installation required — open `class_stitcher.html` in any modern browser.
 - **Statistics** (contrast normalisation) use Welford's online algorithm — O(N) single pass, no intermediate arrays
 - **FBP** uses a custom Cooley–Tukey FFT implementation with ramp, Hamming, or Hann frequency-domain filter
 - MRC output follows the MRC2014 standard with correct `MAP ` identifier and machine stamp
-- Tested with MRC modes 0, 1, 2, 6 as produced by RELION 3/4 and CryoSPARC v3/v4
 
 ---
 
@@ -128,4 +127,15 @@ No installation required — open `class_stitcher.html` in any modern browser.
 
 ## License
 
-MIT — free to use, modify, and distribute.
+    The Program allows to manuly stitch 2D classes and generate an inital 3D-Volume besed on the stitching.
+    Copyright (C) 2026  Janus Lammert
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
