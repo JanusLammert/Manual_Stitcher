@@ -438,6 +438,11 @@ input[type=checkbox]{accent-color:var(--gold);}
     <button class="btn pri sm" onclick="snapROIToContent()" style="flex:1;width:auto">Snap to Fibril Center</button>
     <button class="btn sm" onclick="snapROIToCanvas()" style="flex:1;width:auto">Canvas Center</button>
   </div>
+  <div style="padding:0 10px 8px">
+    <button class="btn sm" onclick="openPeriodicityModal()" style="width:100%;background:var(--pan3);border-color:var(--bdr-b)">
+      ∿ Scan X Periodicity…
+    </button>
+  </div>
 </div>
 
 <!-- ROI EXPORT MODAL -->
@@ -518,6 +523,73 @@ input[type=checkbox]{accent-color:var(--gold);}
   </div>
 </div>
 
+<!-- PERIODICITY MODAL -->
+<div class="mo" id="peri-modal">
+  <div class="mbox" style="width:680px;max-height:88vh">
+    <div class="mh">
+      <div class="mt">∿  X Periodicity Scan — Autocorrelation</div>
+      <div class="mc" onclick="closeMo('peri-modal')">✕</div>
+    </div>
+    <div class="mbody" style="flex-direction:column;padding:14px;gap:12px;overflow-y:auto">
+
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+        <!-- Controls -->
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:200px">
+          <div class="stit">SCAN STRIP</div>
+          <div class="fr" style="margin-bottom:3px">
+            <div class="fl">STRIP Y</div>
+            <select class="fs" id="peri-ymode">
+              <option value="roi">Use ROI height</option>
+              <option value="center">Center row only</option>
+              <option value="all">Full canvas height</option>
+            </select>
+          </div>
+          <div class="fr" style="margin-bottom:3px">
+            <div class="fl">SEARCH MIN</div>
+            <input type="number" class="fi" id="peri-min" value="4" min="2" step="1">
+            <div class="tblbl">px</div>
+          </div>
+          <div class="fr" style="margin-bottom:3px">
+            <div class="fl">SEARCH MAX</div>
+            <input type="number" class="fi" id="peri-max" value="" placeholder="auto" min="4" step="1">
+            <div class="tblbl">px</div>
+          </div>
+          <button class="btn pri" onclick="runPeriodicity()">▶ Compute Autocorrelation</button>
+          <!-- results -->
+          <div class="stit" style="margin-top:4px">DETECTED PERIODS</div>
+          <div id="peri-results" style="background:var(--pan3);border:1px solid var(--bdr);border-radius:3px;padding:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d);line-height:1.8;min-height:60px">
+            Run scan to detect periods.
+          </div>
+          <div class="stit" style="margin-top:2px">APPLY TO ROI</div>
+          <div style="display:flex;gap:5px">
+            <select class="fs" id="peri-pick" style="flex:1">
+              <option value="">— pick period —</option>
+            </select>
+            <button class="btn sm pri" onclick="applyPeriodToROI()" style="white-space:nowrap">Set ROI W</button>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);line-height:1.5">Sets the ROI width to the selected period × 1 (or pick a multiple of the period for averaging).</div>
+          <div class="fr" style="margin-bottom:0">
+            <div class="fl">× MULTIPLE</div>
+            <input type="number" class="fi" id="peri-mult" value="1" min="1" max="20" step="1">
+          </div>
+        </div>
+        <!-- Autocorrelation plot -->
+        <div style="flex:1;min-width:280px;display:flex;flex-direction:column">
+          <div class="stit">AUTOCORRELATION (X)</div>
+          <div style="border:1px solid var(--bdr);border-radius:3px;overflow:hidden;background:#000;position:relative">
+            <canvas id="peri-canvas" style="display:block;width:100%;height:220px"></canvas>
+            <div id="peri-overlay" style="position:absolute;top:6px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(219,157,71,.8)"></div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);margin-top:4px;line-height:1.5">
+            Horizontal autocorrelation of the canvas strip along X. Peaks at lags > 0 indicate repeating structural periods. The tallest secondary peak gives the dominant repeat distance.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- SINOGRAM MODAL -->
 <div class="mo" id="xs-modal">
   <div class="mbox" style="width:93vw;height:87vh;max-width:1340px">
@@ -588,6 +660,20 @@ input[type=checkbox]{accent-color:var(--gold);}
     </div>
     <div class="mft">
       <button class="btn pri" style="width:auto;padding:5px 16px" onclick="runRadon()">▶ Compute FBP</button>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d)">Cn SYM</span>
+        <select id="xs-sym" style="background:var(--pan3);border:1px solid var(--bdr);border-radius:3px;padding:3px 5px;color:var(--txt-b);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;cursor:pointer" onchange="renderXS()">
+          <option value="1">C1 (none)</option>
+          <option value="2">C2</option>
+          <option value="3">C3</option>
+          <option value="4">C4</option>
+          <option value="5">C5</option>
+          <option value="6">C6</option>
+          <option value="7">C7</option>
+          <option value="8">C8</option>
+          <option value="12">C12</option>
+        </select>
+      </div>
       <div style="flex:1"></div>
       <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d)">Cross-section looks correct?</span>
       <button class="btn gld" style="width:auto;padding:6px 20px;font-size:14px" onclick="open3D()">✓ Extend to 3D Map →</button>
@@ -609,6 +695,19 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div style="display:flex;flex-direction:column;gap:6px;min-width:180px">
           <div class="stit" style="margin:0">REVOLUTION</div>
           <div class="fr"><div class="fl">AXIS</div><select class="fs" id="v3d-ax" onchange="prevSl()"><option value="y">Y — vertical</option><option value="x">X — horizontal</option></select></div>
+          <div class="fr"><div class="fl">Cn SYMMETRY</div>
+            <select class="fs" id="v3d-sym" onchange="prevSl()">
+              <option value="1">C1 (none)</option>
+              <option value="2">C2</option>
+              <option value="3">C3</option>
+              <option value="4">C4</option>
+              <option value="5">C5</option>
+              <option value="6">C6</option>
+              <option value="7">C7</option>
+              <option value="8">C8</option>
+              <option value="12">C12</option>
+            </select>
+          </div>
           <div class="fr"><div class="fl">MAX RADIUS</div><input type="number" class="fi" id="v3d-r" placeholder="auto" min="4" onchange="prevSl()"><div class="tblbl">px</div></div>
           <div class="fr"><div class="fl">CROSSOVER</div><input type="number" class="fi" id="v3d-co" placeholder="none" min="1" onchange="prevSl()"><div class="tblbl">px</div></div>
         </div>
@@ -1452,9 +1551,12 @@ function renderXS(){
   xsGamma=gamma;xsBright=bright;
   xsManLo=+document.getElementById('xs-man-lo').value||0;
   xsManHi=+document.getElementById('xs-man-hi').value||255;
+  // Apply Cn symmetry to FBP result for display
+  const symN=+document.getElementById('xs-sym')?.value||1;
+  const displayData=symN>1?applyCnSym(fbpData,fbpSz,symN):fbpData;
   // Render fbpData into the hidden canvas xs-rc, then draw into viewport
   const rc=document.getElementById('xs-rc');
-  drawF32(fbpData,fbpSz,fbpSz,rc,cm,cx2,inv,gamma,bright,xsCMode,xsManLo,xsManHi);
+  drawF32(displayData,fbpSz,fbpSz,rc,cm,cx2,inv,gamma,bright,xsCMode,xsManLo,xsManHi);
   drawXSViewport();
 }
 
@@ -1534,12 +1636,238 @@ function drawF32(data,w,h,canv,sigMin,sigMax,inv,gamma=1,bright=0,mode='sigma',m
 
 function setPg(p,pct,lbl){document.getElementById(p+'-pg').style.width=pct+'%';const l=document.getElementById(p+'-pl');if(l)l.textContent=lbl;}
 
+// ═══════════════════════ PERIODICITY SCAN ═══════════════════════
+function openPeriodicityModal(){
+  openMo('peri-modal');
+}
+
+function runPeriodicity(){
+  // Build a grayscale strip of the stitched canvas along X
+  const scene=renderScene();
+  if(!scene){document.getElementById('peri-results').textContent='No instances on canvas.';return;}
+  const{canvas:sc,ox:originX,oy:originY}=scene;
+  const W=sc.width,H=sc.height;
+
+  // Determine vertical strip range
+  const ymode=document.getElementById('peri-ymode').value;
+  let y0=0,y1=H;
+  if(ymode==='roi'&&roi){
+    y0=Math.max(0,Math.round(roi.y-originY));
+    y1=Math.min(H,Math.round(roi.y+roi.h-originY));
+  } else if(ymode==='center'){
+    y0=Math.max(0,Math.floor(H/2)-2);y1=Math.min(H,y0+4);
+  }
+  if(y1<=y0){y0=0;y1=H;}
+
+  const ctx=sc.getContext('2d');
+  const id=ctx.getImageData(0,y0,W,y1-y0);
+
+  // Build 1D signal: mean intensity per column
+  const sig=new Float64Array(W);
+  const stripH=y1-y0;
+  for(let x=0;x<W;x++){
+    let s=0;
+    for(let y=0;y<stripH;y++) s+=id.data[(y*W+x)*4];
+    sig[x]=s/stripH;
+  }
+
+  // Subtract mean
+  const mean=sig.reduce((a,b)=>a+b,0)/W;
+  for(let x=0;x<W;x++) sig[x]-=mean;
+
+  // Autocorrelation via FFT (zero-padded to 2^n)
+  const N=nextP2(W*2);
+  const re=new Float64Array(N),im=new Float64Array(N);
+  for(let i=0;i<W;i++) re[i]=sig[i];
+  fft(re,im,false);
+  // Multiply by conjugate
+  for(let i=0;i<N;i++){const r=re[i],ii=im[i];re[i]=r*r+ii*ii;im[i]=0;}
+  fft(re,im,true);
+  // re[0] = zero-lag (max), re[1..] = autocorrelation at lag 1,2,...
+  const ac=new Float64Array(Math.floor(W/2));
+  const norm=re[0]||1;
+  for(let lag=0;lag<ac.length;lag++) ac[lag]=re[lag]/norm;
+
+  // Find peaks in ac[minLag..maxLag]
+  const minLag=Math.max(2,+document.getElementById('peri-min').value||4);
+  const maxLag=Math.min(ac.length-1,+document.getElementById('peri-max').value||Math.floor(W/2));
+  const px=+document.getElementById('px-inp').value||1;
+
+  // Peak detection: local maxima above threshold
+  const peaks=[];
+  for(let lag=minLag+1;lag<maxLag;lag++){
+    if(ac[lag]>ac[lag-1]&&ac[lag]>ac[lag+1]&&ac[lag]>0.05){
+      peaks.push({lag,val:ac[lag]});
+    }
+  }
+  peaks.sort((a,b)=>b.val-a.val);
+  const top=peaks.slice(0,6);
+
+  // Draw autocorrelation
+  const canv=document.getElementById('peri-canvas');
+  const dpr=window.devicePixelRatio||1;
+  canv.width=canv.offsetWidth*dpr;canv.height=canv.offsetHeight*dpr;
+  const cc=canv.getContext('2d');cc.scale(dpr,dpr);
+  const cw=canv.offsetWidth,ch=canv.offsetHeight;
+  cc.fillStyle='#000';cc.fillRect(0,0,cw,ch);
+
+  // Plot ac curve
+  const plotW=Math.min(ac.length,maxLag+10);
+  const xScale=cw/plotW;
+  const yMin=Math.min(...Array.from(ac.slice(0,maxLag+10)));
+  const yRange=(1-yMin)||1;
+
+  // grid lines
+  cc.strokeStyle='rgba(2,61,107,.4)';cc.lineWidth=1;
+  for(let v=0;v<=1;v+=0.25){const py=ch-(v-yMin)/yRange*ch*0.9-ch*0.05;cc.beginPath();cc.moveTo(0,py);cc.lineTo(cw,py);cc.stroke();}
+
+  // zero line
+  const zy=ch-(-yMin)/yRange*ch*0.9-ch*0.05;
+  cc.strokeStyle='rgba(255,255,255,.15)';cc.lineWidth=1;cc.beginPath();cc.moveTo(0,zy);cc.lineTo(cw,zy);cc.stroke();
+
+  // ac curve
+  cc.strokeStyle='#4a9fd4';cc.lineWidth=1.5;cc.beginPath();
+  for(let lag=1;lag<plotW;lag++){
+    const px2=lag*xScale,py=ch-(ac[lag]-yMin)/yRange*ch*0.9-ch*0.05;
+    lag===1?cc.moveTo(px2,py):cc.lineTo(px2,py);
+  }cc.stroke();
+
+  // Peak markers + labels
+  top.forEach((p,i)=>{
+    const px2=p.lag*xScale,py=ch-(p.val-yMin)/yRange*ch*0.9-ch*0.05;
+    cc.fillStyle=i===0?'#DB9D47':'#6dd47b';
+    cc.beginPath();cc.arc(px2,py,4,0,Math.PI*2);cc.fill();
+    cc.fillStyle=i===0?'#DB9D47':'#6dd47b';
+    cc.font='9px "IBM Plex Mono"';
+    cc.fillText(`${p.lag}px`,px2+5,py-3);
+  });
+
+  document.getElementById('peri-overlay').textContent=`Strip: Y ${y0}–${y1} (${W}×${stripH})`;
+
+  // Update results text
+  if(top.length===0){
+    document.getElementById('peri-results').textContent='No clear periodicity detected.';
+    document.getElementById('peri-pick').innerHTML='<option value="">No peaks found</option>';
+  } else {
+    let html='';
+    const sel=document.getElementById('peri-pick');
+    sel.innerHTML='<option value="">— pick period —</option>';
+    top.forEach((p,i)=>{
+      const angA=(p.lag*px).toFixed(2);
+      html+=`${i===0?'★':' '} Lag ${p.lag} px = ${angA} Å (NCC ${(p.val*100).toFixed(1)}%)\n`;
+      const opt=document.createElement('option');
+      opt.value=p.lag;
+      opt.textContent=`${p.lag} px = ${angA} Å (${(p.val*100).toFixed(1)}%)`;
+      sel.appendChild(opt);
+    });
+    document.getElementById('peri-results').textContent=html.trim();
+    // auto-select top
+    sel.selectedIndex=1;
+  }
+}
+
+function applyPeriodToROI(){
+  const period=+document.getElementById('peri-pick').value;
+  if(!period)return;
+  const mult=Math.max(1,+document.getElementById('peri-mult').value||1);
+  const newW=period*mult;
+  if(!roi){roi={x:0,y:0,w:newW,h:60};}
+  else{
+    const cx=roi.x+roi.w/2,cy=roi.y+roi.h/2;
+    roi={x:cx-newW/2,y:cy-roi.h/2,w:newW,h:roi.h};
+  }
+  syncROICtrl();updROIBadge();
+  closeMo('peri-modal');
+  render();
+  document.getElementById('roi-ctrl').classList.add('vis');
+}
+
+// ═══════════════════════ Cn SYMMETRY ═══════════════════════
+// Apply Cn rotational symmetry to a square Float32Array image
+function applyCnSym(data, sz, n){
+  if(n<=1)return data;
+  const out=new Float32Array(sz*sz);
+  const cx=sz/2,cy=sz/2;
+  const step=2*Math.PI/n;
+  // For each output pixel, average contributions from all n rotated positions
+  for(let y=0;y<sz;y++){
+    for(let x=0;x<sz;x++){
+      const dx=x-cx,dy=y-cy;
+      const r=Math.sqrt(dx*dx+dy*dy);
+      const baseAngle=Math.atan2(dy,dx);
+      let sum=0,cnt=0;
+      for(let k=0;k<n;k++){
+        const angle=baseAngle+k*step;
+        const sx=cx+r*Math.cos(angle);
+        const sy=cy+r*Math.sin(angle);
+        // Bilinear sample
+        const ix=Math.floor(sx),iy=Math.floor(sy);
+        if(ix>=0&&ix<sz-1&&iy>=0&&iy<sz-1){
+          const fx=sx-ix,fy=sy-iy;
+          sum+=data[iy*sz+ix]*(1-fx)*(1-fy)
+              +data[iy*sz+ix+1]*fx*(1-fy)
+              +data[(iy+1)*sz+ix]*(1-fx)*fy
+              +data[(iy+1)*sz+ix+1]*fx*fy;
+          cnt++;
+        }
+      }
+      out[y*sz+x]=cnt>0?sum/cnt:0;
+    }
+  }
+  return out;
+}
+
 // ═══════════════════════ 3D ═══════════════════════
-function open3D(){if(!fbpData){alert('Run FBP first.');return;}closeMo('xs-modal');drawF32(fbpData,fbpSz,fbpSz,document.getElementById('v3d-xc'),-3,3,false);document.getElementById('v3d-xi').textContent=`${fbpSz}×${fbpSz}`;document.getElementById('v3d-r').value=Math.floor(fbpSz/2);updVI();openMo('v3d-modal');}
-function updVI(){const sz=fbpSz,r=+document.getElementById('v3d-r').value||Math.floor(sz/2),px=+document.getElementById('px-inp').value||1;document.getElementById('v3d-vol').textContent=`${r*2}×${sz}×${r*2}`;document.getElementById('v3d-vox').textContent=px.toFixed(4);document.getElementById('v3d-fsz').textContent=`~${(r*2*sz*r*2*4/1048576).toFixed(1)} MB`;}
-function sXS(r,iy){const sz=fbpSz,cx=sz/2,cy=sz/2,ax=document.getElementById('v3d-ax').value;let col,row;if(ax==='y'){col=Math.round(cx+r);row=iy;}else{col=iy;row=Math.round(cy+r);}col=Math.max(0,Math.min(sz-1,col));row=Math.max(0,Math.min(sz-1,row));return fbpData[row*sz+col];}
-function prevSl(){if(!fbpData)return;updVI();const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,bXZ=r*2,bY=sz;const eq=new Float32Array(bXZ*bXZ),mid=Math.floor(bY/2);for(let iz=0;iz<bXZ;iz++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;eq[iz*bXZ+ix]=sXS(rr,mid);}drawF32(eq,bXZ,bXZ,document.getElementById('v3d-ec'),-3,3,false);document.getElementById('v3d-ei').textContent=`${bXZ}×${bXZ}`;const mer=new Float32Array(bXZ*bY);for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,rr=Math.abs(dx);if(rr>r||(co>0&&rr>co))continue;mer[iy*bXZ+ix]=sXS(rr,iy);}drawF32(mer,bXZ,bY,document.getElementById('v3d-mc2'),-3,3,false);document.getElementById('v3d-mi').textContent=`${bXZ}×${bY}`;}
-async function comp3D(){if(!fbpData)return;const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,px=+document.getElementById('px-inp').value||1,bXZ=r*2,bY=sz,btn=document.getElementById('v3d-btn');btn.disabled=true;document.getElementById('v3d-pw').style.display='';setPg('v3d',0,'Alloc…');await yf();const vol=new Float32Array(bXZ*bY*bXZ);for(let iz=0;iz<bXZ;iz++){for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;vol[iz*bY*bXZ+iy*bXZ+ix]=sXS(rr,iy);}if(iz%4===0){setPg('v3d',iz/bXZ*94,`Layer ${iz}/${bXZ}`);await yf();}}setPg('v3d',97,'MRC…');await yf();const buf=wMRC(vol,bXZ,bY,bXZ,px);const blob=new Blob([buf],{type:'application/octet-stream'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='reconstruction_3d.mrc';a.click();URL.revokeObjectURL(url);setPg('v3d',100,'Done');btn.disabled=false;setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);}
+function getSymData(){
+  const n=+document.getElementById('v3d-sym')?.value||1;
+  return n>1?applyCnSym(fbpData,fbpSz,n):fbpData;
+}
+function open3D(){
+  if(!fbpData){alert('Run FBP first.');return;}
+  closeMo('xs-modal');
+  // Sync Cn value from sinogram modal to 3D modal
+  const xsSym=document.getElementById('xs-sym')?.value||'1';
+  document.getElementById('v3d-sym').value=xsSym;
+  const symData=getSymData();
+  drawF32(symData,fbpSz,fbpSz,document.getElementById('v3d-xc'),-3,3,false);
+  document.getElementById('v3d-xi').textContent=`${fbpSz}×${fbpSz}`;
+  document.getElementById('v3d-r').value=Math.floor(fbpSz/2);
+  updVI();openMo('v3d-modal');
+}
+function sXS(r,iy,data){
+  const sz=fbpSz,cx=sz/2,cy=sz/2,ax=document.getElementById('v3d-ax').value;
+  let col,row;
+  if(ax==='y'){col=Math.round(cx+r);row=iy;}else{col=iy;row=Math.round(cy+r);}
+  col=Math.max(0,Math.min(sz-1,col));row=Math.max(0,Math.min(sz-1,row));
+  return(data||fbpData)[row*sz+col];
+}
+function prevSl(){
+  if(!fbpData)return;updVI();
+  const symData=getSymData();
+  drawF32(symData,fbpSz,fbpSz,document.getElementById('v3d-xc'),-3,3,false);
+  const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,bXZ=r*2,bY=sz;
+  const eq=new Float32Array(bXZ*bXZ),mid=Math.floor(bY/2);
+  for(let iz=0;iz<bXZ;iz++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;eq[iz*bXZ+ix]=sXS(rr,mid,symData);}
+  drawF32(eq,bXZ,bXZ,document.getElementById('v3d-ec'),-3,3,false);document.getElementById('v3d-ei').textContent=`${bXZ}×${bXZ}`;
+  const mer=new Float32Array(bXZ*bY);
+  for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,rr=Math.abs(dx);if(rr>r||(co>0&&rr>co))continue;mer[iy*bXZ+ix]=sXS(rr,iy,symData);}
+  drawF32(mer,bXZ,bY,document.getElementById('v3d-mc2'),-3,3,false);document.getElementById('v3d-mi').textContent=`${bXZ}×${bY}`;
+}
+async function comp3D(){
+  if(!fbpData)return;
+  const symData=getSymData();
+  const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,px=+document.getElementById('px-inp').value||1,bXZ=r*2,bY=sz,btn=document.getElementById('v3d-btn');
+  btn.disabled=true;document.getElementById('v3d-pw').style.display='';setPg('v3d',0,'Alloc…');await yf();
+  const vol=new Float32Array(bXZ*bY*bXZ);
+  for(let iz=0;iz<bXZ;iz++){
+    for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;vol[iz*bY*bXZ+iy*bXZ+ix]=sXS(rr,iy,symData);}
+    if(iz%4===0){setPg('v3d',iz/bXZ*94,`Layer ${iz}/${bXZ}`);await yf();}
+  }
+  setPg('v3d',97,'MRC…');await yf();
+  const buf=wMRC(vol,bXZ,bY,bXZ,px);
+  const blob=new Blob([buf],{type:'application/octet-stream'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='reconstruction_3d.mrc';a.click();URL.revokeObjectURL(url);
+  setPg('v3d',100,'Done');btn.disabled=false;setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);
+}
 function wMRC(data,nx,ny,nz,pixSz){const buf=new ArrayBuffer(1024+nx*ny*nz*4),dv=new DataView(buf);dv.setInt32(0,nx,true);dv.setInt32(4,ny,true);dv.setInt32(8,nz,true);dv.setInt32(12,2,true);dv.setInt32(28,nx,true);dv.setInt32(32,ny,true);dv.setInt32(36,nz,true);dv.setFloat32(40,nx*pixSz,true);dv.setFloat32(44,ny*pixSz,true);dv.setFloat32(48,nz*pixSz,true);dv.setFloat32(52,90,true);dv.setFloat32(56,90,true);dv.setFloat32(60,90,true);dv.setInt32(64,1,true);dv.setInt32(68,2,true);dv.setInt32(72,3,true);let mn=Infinity,mx=-Infinity,sm=0;for(let i=0;i<data.length;i++){mn=Math.min(mn,data[i]);mx=Math.max(mx,data[i]);sm+=data[i];}dv.setFloat32(76,mn,true);dv.setFloat32(80,mx,true);dv.setFloat32(84,sm/data.length,true);dv.setInt32(88,1,true);[77,65,80,32].forEach((c,i)=>dv.setUint8(208+i,c));dv.setUint8(212,0x44);dv.setUint8(213,0x44);new Float32Array(buf,1024).set(data);return buf;}
 
 // ═══════════════════════ Z-ORDER ═══════════════════════
