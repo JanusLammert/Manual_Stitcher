@@ -178,6 +178,9 @@ input[type=checkbox]{accent-color:var(--gold);}
   <button class="tbtn accent" onclick="document.getElementById('fi').click()">
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Load MRCS
   </button>
+  <button class="tbtn" onclick="loadTestDataset()" title="Generate synthetic helical filament class averages">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Test Dataset
+  </button>
   <input type="file" id="fi" accept=".mrcs,.mrc" style="display:none" multiple>
   <div class="tdiv"></div>
   <div class="tblbl">PX</div>
@@ -389,9 +392,7 @@ input[type=checkbox]{accent-color:var(--gold);}
       <button class="btn sm" onclick="zBring('fwd')"   title="Move one step forward">↑ Fwd</button>
       <button class="btn sm" onclick="zBring('bwd')"   title="Move one step back">↓ Bwd</button>
     </div>
-    <div class="fpsec">EXPORT</div>
-    <button class="btn sm gld" onclick="openROIExport()" style="width:100%;margin-bottom:6px">◈ Export ROI as Image…</button>
-    <div style="height:2px"></div>
+    <div style="height:8px"></div>
     <button class="btn dng" onclick="removeSelected()">Remove Instance</button>
   </div>
 </div>
@@ -442,6 +443,9 @@ input[type=checkbox]{accent-color:var(--gold);}
     <button class="btn sm" onclick="openPeriodicityModal()" style="width:100%;background:var(--pan3);border-color:var(--bdr-b)">
       ∿ Scan X Periodicity…
     </button>
+  </div>
+  <div style="padding:0 10px 10px">
+    <button class="btn sm gld" onclick="openROIExport()" style="width:100%">◈ Export ROI as Image…</button>
   </div>
 </div>
 
@@ -596,18 +600,23 @@ input[type=checkbox]{accent-color:var(--gold);}
     <div class="mh"><div class="mt">⊙  Sinogram Cross-Section</div><div class="mc" onclick="closeMo('xs-modal')">✕</div></div>
     <div class="mbody">
       <div class="msb">
-        <div class="stit">ROI PATCH</div>
+        <div class="stit">STITCHED IMAGE</div>
         <div style="border:1px solid var(--bdr);border-radius:3px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;min-height:60px">
           <canvas id="xs-prev" style="image-rendering:pixelated;max-width:100%;max-height:100px"></canvas>
         </div>
-        <div class="ibox"><div>Patch: <span class="v" id="xs-pinf">—</span></div><div>Helix axis: <span class="v">X direction</span></div></div>
-        <div class="stit">RADON</div>
-        <div class="fr"><div class="fl">ANGLES</div><input type="number" class="fi" id="xs-nang" value="180" min="36" max="720" step="18"><div class="tblbl">°</div></div>
-        <div class="fr"><div class="fl">FILTER</div><select class="fs" id="xs-filt"><option value="ramp">Ram-Lak</option><option value="hamming">Hamming</option><option value="hann">Hann</option><option value="none">None</option></select></div>
-        <div class="fr"><div class="fl">MODE</div><select class="fs" id="xs-mode"><option value="x">Sum along X (helix)</option><option value="full">Full 2D Radon</option></select></div>
+        <div class="ibox"><div>ROI: <span class="v" id="xs-pinf">—</span></div><div>Helix axis: <span class="v">X direction</span></div></div>
+
+        <div class="stit" style="margin-top:8px">COMPOSITE MODE</div>
+        <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;margin-bottom:6px">
+          <button id="xs-comp-top-btn" onclick="setXSComp('top')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.5px">TOP LAYER</button>
+          <button id="xs-comp-avg-btn" onclick="setXSComp('avg')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px">AVERAGE</button>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);margin-bottom:6px;line-height:1.5">All classes rendered at full opacity. Each column of the stitched image is treated as a projection at azimuthal angle θ = x/W × 180°.</div>
+
+        <div class="stit">RECONSTRUCTION</div>
         <div class="fr"><div class="fl">OUT SIZE</div><input type="number" class="fi" id="xs-outsz" value="256" min="32" max="1024" step="32"></div>
+
         <div class="stit">DISPLAY</div>
-        <!-- mode toggle for sinogram -->
         <div class="fr" style="margin-bottom:5px">
           <div class="fl">MODE</div>
           <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1">
@@ -627,39 +636,69 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="srow"><label>GAMMA</label><input type="range" id="xs-gamma" min="0.2" max="3.0" step="0.05" value="1.0" oninput="renderXS()"><div class="sv" id="xs-gamma-v">1.00</div></div>
         <div class="srow"><label>BRIGHT</label><input type="range" id="xs-bright" min="-100" max="100" step="1" value="0" oninput="renderXS()"><div class="sv" id="xs-bright-v">0</div></div>
         <div class="fr"><label class="fl">INVERT</label><input type="checkbox" id="xs-inv" onchange="renderXS()"></div>
-        <div class="ibox">
-          <div>Projs: <span class="v" id="xs-np">—</span></div><div>Rays: <span class="v" id="xs-nr">—</span></div><div>Out: <span class="v" id="xs-os">—</span></div>
+
+        <div class="stit">ROI SIZE (live adjust)</div>
+        <div class="fr" style="margin-bottom:4px">
+          <div class="fl">WIDTH</div>
+          <input type="number" class="fi" id="xs-roi-w" min="4" step="1" oninput="xsAdjustROI()">
+          <div class="tblbl">px</div>
         </div>
+        <div class="fr" style="margin-bottom:4px">
+          <div class="fl">HEIGHT</div>
+          <input type="number" class="fi" id="xs-roi-h" min="4" step="1" oninput="xsAdjustROI()">
+          <div class="tblbl">px</div>
+        </div>
+        <div style="display:flex;gap:4px;margin-bottom:6px">
+          <button class="btn sm pri" onclick="xsRerunFromROI()" style="flex:1">↺ Recompute</button>
+          <button class="btn sm" onclick="xsSyncROIToPanel()" style="flex:1">← From canvas</button>
+        </div>
+
         <div id="xs-ent-wrap" style="display:none;margin-top:4px">
           <div class="stit">ENTROPY</div>
           <div class="entropy-badge">H = <span id="xs-entropy">—</span> bits</div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);margin-top:3px;line-height:1.5">Shannon entropy of normalized cross-section histogram. Lower = sharper/more structured.</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);margin-top:3px;line-height:1.5">Shannon entropy of cross-section. Lower = sharper/more structured.</div>
         </div>
         <div id="xs-pw" style="display:none"><div class="plbl2" id="xs-pl">Computing…</div><div class="pbar"><div class="pfill" id="xs-pg" style="width:0%"></div></div></div>
+        <!-- hidden stat labels kept for compat -->
+        <span id="xs-np" style="display:none"></span><span id="xs-nr" style="display:none"></span><span id="xs-os" style="display:none"></span>
       </div>
       <div class="mca">
         <div class="mcrow">
-          <div class="mpane" style="flex:.8"><div class="plbl">ROI PATCH<em id="xs-pi2"></em></div><div class="pwrap"><canvas id="xs-pc"></canvas></div></div>
-          <div class="mpane"><div class="plbl">SINOGRAM (θ vs t)<em id="xs-si"></em></div><div class="pwrap"><canvas id="xs-sc"></canvas></div></div>
-          <div class="mpane" id="xs-recon-pane">
+          <div class="mpane" style="flex:.8"><div class="plbl">STITCHED IMAGE<em id="xs-pi2"></em></div><div class="pwrap"><canvas id="xs-pc"></canvas></div></div>
+          <div class="mpane" id="xs-xsec-pane">
             <div class="plbl" style="display:flex;align-items:center;gap:0">
-              <span>CROSS-SECTION (FBP)</span><em id="xs-ri"></em>
+              <span>CROSS-SECTION (back-proj)</span><em id="xs-si"></em>
               <div style="margin-left:auto;display:flex;gap:2px;padding-right:4px">
-                <button onclick="xsZoom(1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1" title="Zoom in">+</button>
-                <button onclick="xsZoom(1/1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1" title="Zoom out">−</button>
-                <button onclick="xsZoomReset()" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:9px;line-height:1" title="Fit">⊡</button>
+                <button onclick="xsScZoom(1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1">+</button>
+                <button onclick="xsScZoom(1/1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1">−</button>
+                <button onclick="xsScZoomReset()" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:9px;line-height:1">⊡</button>
               </div>
             </div>
-            <!-- zoomable viewport: offscreen FBP canvas → displayed via a 2D panzoom canvas -->
+            <div style="flex:1;position:relative;overflow:hidden;background:#000" id="xs-sc-wrap">
+              <canvas id="xs-sc-vp" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
+            </div>
+          </div>
+          <div class="mpane" id="xs-recon-pane">
+            <div class="plbl" style="display:flex;align-items:center;gap:0">
+              <span>REPROJECTION (quality check)</span><em id="xs-ri"></em>
+              <div style="margin-left:auto;display:flex;gap:2px;padding-right:4px">
+                <button onclick="xsZoom(1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1">+</button>
+                <button onclick="xsZoom(1/1.5)" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:12px;line-height:1">−</button>
+                <button onclick="xsZoomReset()" style="width:22px;height:18px;background:var(--pan3);border:1px solid var(--bdr);border-radius:2px;color:var(--txt-d);cursor:pointer;font-size:9px;line-height:1">⊡</button>
+              </div>
+            </div>
             <div style="flex:1;position:relative;overflow:hidden;background:#000" id="xs-vp-wrap">
               <canvas id="xs-vp" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
             </div>
           </div>
+          <!-- hidden offscreen canvases for drawF32 target + raw data -->
+          <canvas id="xs-sc" style="display:none"></canvas>
+          <canvas id="xs-rc" style="display:none"></canvas>
         </div>
       </div>
     </div>
     <div class="mft">
-      <button class="btn pri" style="width:auto;padding:5px 16px" onclick="runRadon()">▶ Compute FBP</button>
+      <button class="btn pri" style="width:auto;padding:5px 16px" onclick="runRadon()">▶ Compute Cross-Section</button>
       <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d)">Cn SYM</span>
         <select id="xs-sym" style="background:var(--pan3);border:1px solid var(--bdr);border-radius:3px;padding:3px 5px;color:var(--txt-b);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;cursor:pointer" onchange="renderXS()">
@@ -786,9 +825,13 @@ let cManLo=0, cManHi=255;
 let cGamma=1.0, cBright=0;
 // XS (sinogram) contrast state (independent)
 let xsCMode='sigma', xsManLo=0, xsManHi=255, xsGamma=1.0, xsBright=0;
-// XS viewport pan/zoom
+let xsCompMode='top';  // 'top' | 'avg'
+// XS viewport pan/zoom (reprojection, pane 3)
 let xsVpZ=1, xsVpX=0, xsVpY=0;
-let xsVpDrag=null;
+// XS cross-section viewport pan/zoom (pane 2)
+let xsScVpZ=1, xsScVpX=0, xsScVpY=0;
+// Raw computed data (needed so contrast sliders can re-render without recomputing)
+let xsReprojData=null, xsReprojW=0, xsReprojH=0;
 let thumbH=56;
 
 const MC=document.getElementById('mc');
@@ -852,6 +895,7 @@ function init(){
   document.getElementById('px-inp').addEventListener('input',updPxLbl);
   initSidebarResize();
   initXSViewport();
+  initXSScViewport();
   render();
 }
 function resizeMC(){MC.width=CW.clientWidth;MC.height=CW.clientHeight;renderNow();}
@@ -1231,13 +1275,67 @@ function applyROICtrl(){
   updROIBadge();render();
 }
 function snapROIToContent(){
-  // Find the centroid of all instance centers (approximate fibril center)
-  if(!instances.length){if(roi)return;return;}
-  let sx=0,sy=0,n=0;
-  instances.forEach(inst=>{sx+=instCX(inst);sy+=instCY(inst);n++;});
-  sx/=n;sy/=n;
-  if(!roi)roi={x:0,y:0,w:100,h:60};
-  roi.x=sx-roi.w/2;roi.y=sy-roi.h/2;
+  // Render the current ROI region and find the brightness-weighted Y centroid
+  // of the 1D projection along X (mean intensity per row).
+  // Then shift the ROI vertically so that centroid becomes the new ROI centre.
+  // X position and size are not changed.
+
+  if(!roi){
+    // No ROI yet — fall back to simple canvas-center snap
+    if(!instances.length) return;
+    let sy=0,n=0;
+    instances.forEach(inst=>{sy+=instCY(inst);n++;});
+    roi={x:roi?.x??0, y:sy/n-40, w:roi?.w??120, h:roi?.h??80};
+    syncROICtrl();updROIBadge();render();
+    return;
+  }
+
+  // Capture the current ROI strip (full opacity, top-layer composite)
+  const rW=Math.round(roi.w), rH=Math.round(roi.h);
+  if(rW<2||rH<2) return;
+
+  // Render the scene at display scale into an offscreen canvas
+  const scene=renderScene();
+  if(!scene) return;
+  const{canvas:sc, ox:originX, oy:originY}=scene;
+
+  // Clip to what's actually in the scene
+  const px=Math.round(roi.x - originX);
+  const py=Math.round(roi.y - originY);
+  const sx=Math.max(0, px), sy=Math.max(0, py);
+  const sw=Math.min(rW, sc.width  - sx);
+  const sh=Math.min(rH, sc.height - sy);
+  if(sw<=0||sh<=0) return;
+
+  // Sample pixels: compute mean intensity per row (projection along X)
+  const ctx=sc.getContext('2d');
+  const id=ctx.getImageData(sx, sy, sw, sh);
+
+  // rowProfile[y] = mean pixel value of row y within the captured strip
+  const rowProfile=new Float64Array(sh);
+  for(let y=0;y<sh;y++){
+    let s=0;
+    for(let x=0;x<sw;x++) s+=id.data[(y*sw+x)*4];
+    rowProfile[y]=s/sw;
+  }
+
+  // Brightness-weighted centroid of the row profile
+  let wSum=0, posSum=0;
+  for(let y=0;y<sh;y++){
+    const w=Math.max(0, rowProfile[y]);   // use raw brightness as weight
+    wSum+=w;
+    posSum+=y*w;
+  }
+  if(wSum<1e-6) return;  // nothing bright — don't move
+
+  // Centroid in the captured-strip's local coordinate system
+  const centroidLocal=posSum/wSum;
+  // Convert to world coordinate: sy is the y-offset within the scene, originY is scene's world origin
+  const centroidWorld=originY + sy + centroidLocal;
+
+  // Shift ROI so this centroid becomes the new vertical centre
+  roi = {x: roi.x, y: centroidWorld - rH/2, w: roi.w, h: roi.h};
+
   syncROICtrl();updROIBadge();render();
 }
 function snapROIToCanvas(){
@@ -1476,47 +1574,332 @@ function captureROI(){
 }
 
 // ═══════════════════════ CROSS-SECTION ═══════════════════════
+// ═══ COMPOSITE MODE TOGGLE ═══
+function setXSComp(m){
+  xsCompMode=m;
+  document.getElementById('xs-comp-top-btn').style.background=m==='top'?'var(--navy)':'var(--pan3)';
+  document.getElementById('xs-comp-top-btn').style.color=m==='top'?'#ddf':'var(--txt-d)';
+  document.getElementById('xs-comp-avg-btn').style.background=m==='avg'?'var(--navy)':'var(--pan3)';
+  document.getElementById('xs-comp-avg-btn').style.color=m==='avg'?'#ddf':'var(--txt-d)';
+}
+
+// Render the ROI region at full opacity using the chosen composite mode.
+// Returns a Float32Array[W*H] of grayscale values [0-255] and {W,H}.
+function buildStitchedROI(){
+  if(!roi)return null;
+  const rW=Math.round(roi.w), rH=Math.round(roi.h);
+  if(rW<2||rH<2)return null;
+
+  const out=new Float32Array(rW*rH);   // accumulated pixel values
+  const cnt=new Float32Array(rW*rH);   // count for averaging
+  const cmap=CMAPS.gray;               // always grayscale for the sinogram data
+
+  // Find all instances whose bbox overlaps the ROI
+  const rx=roi.x, ry=roi.y;
+  instances.forEach(inst=>{
+    const cls=getCls(inst.classId);if(!cls)return;
+    const iW=iDispW(inst), iH=iDispH(inst);
+    // Intersection of instance bbox and ROI in world coords
+    const ox1=Math.max(rx, inst.x), oy1=Math.max(ry, inst.y);
+    const ox2=Math.min(rx+rW, inst.x+iW), oy2=Math.min(ry+rH, inst.y+iH);
+    if(ox2<=ox1||oy2<=oy1)return;
+
+    // Render instance at full opacity (ignore inst.opacity)
+    const tmpInst={...inst, opacity:1};
+    const cc=clsToCanvas(cls, tmpInst, cmap);
+    // cc is in DATA pixels (iCropW × iCropH). It maps to world coords:
+    // world x ∈ [inst.x, inst.x+iW], data pixel x_d = (wx-inst.x)/dispScale
+    const x0d=Math.round(ox1-rx), y0d=Math.round(oy1-ry);
+    const x1d=Math.round(ox2-rx), y1d=Math.round(oy2-ry);
+    // Pixel size in data coords vs display coords
+    const scaleX=cc.width/iW, scaleY=cc.height/iH;
+    const srcCtx=cc.getContext('2d');
+
+    for(let ry2=y0d;ry2<y1d;ry2++){
+      for(let rx2=x0d;rx2<x1d;rx2++){
+        const wx=rx+rx2, wy=ry+ry2;
+        // Map world to data pixel in the instance canvas
+        const dx=(wx-inst.x)*scaleX, dy=(wy-inst.y)*scaleY;
+        const ix=Math.floor(dx), iy2=Math.floor(dy);
+        if(ix<0||ix>=cc.width||iy2<0||iy2>=cc.height)continue;
+        const px=srcCtx.getImageData(ix,iy2,1,1).data[0];
+        const idx=ry2*rW+rx2;
+        if(xsCompMode==='top'){
+          // Overwrite (topmost in instances array is rendered last = wins)
+          out[idx]=px; cnt[idx]=1;
+        } else {
+          out[idx]+=px; cnt[idx]++;
+        }
+      }
+    }
+  });
+
+  if(xsCompMode==='avg'){
+    for(let i=0;i<out.length;i++) if(cnt[i]>0) out[i]/=cnt[i];
+  }
+  return{data:out, W:rW, H:rH};
+}
+
+// Faster batch version using drawImage instead of per-pixel getImageData
+function buildStitchedROIFast(){
+  if(!roi)return null;
+  const rW=Math.round(roi.w), rH=Math.round(roi.h);
+  if(rW<2||rH<2)return null;
+
+  const cmap=CMAPS.gray;
+  const oc=document.createElement('canvas');oc.width=rW;oc.height=rH;
+  const ox=oc.getContext('2d');
+
+  if(xsCompMode==='avg'){
+    // Accumulate into float arrays
+    const acc=new Float32Array(rW*rH);
+    const cnt=new Float32Array(rW*rH);
+    instances.forEach(inst=>{
+      const cls=getCls(inst.classId);if(!cls)return;
+      const iW=iDispW(inst),iH=iDispH(inst);
+      const ox1=Math.max(roi.x,inst.x),oy1=Math.max(roi.y,inst.y);
+      const ox2=Math.min(roi.x+rW,inst.x+iW),oy2=Math.min(roi.y+rH,inst.y+iH);
+      if(ox2<=ox1||oy2<=oy1)return;
+      const cc=clsToCanvas(cls,{...inst,opacity:1},cmap);
+      // Draw into temp canvas
+      const tc=document.createElement('canvas');tc.width=rW;tc.height=rH;
+      const tx=tc.getContext('2d');
+      tx.drawImage(cc, (inst.x-roi.x), (inst.y-roi.y), iW, iH);
+      const id=tx.getImageData(0,0,rW,rH).data;
+      for(let ry2=Math.round(oy1-roi.y);ry2<Math.round(oy2-roi.y);ry2++){
+        for(let rx2=Math.round(ox1-roi.x);rx2<Math.round(ox2-roi.x);rx2++){
+          const i=ry2*rW+rx2;
+          acc[i]+=id[(ry2*rW+rx2)*4];cnt[i]++;
+        }
+      }
+    });
+    const out=new Float32Array(rW*rH);
+    for(let i=0;i<out.length;i++)out[i]=cnt[i]>0?acc[i]/cnt[i]:0;
+    return{data:out,W:rW,H:rH};
+  } else {
+    // Top layer: draw instances back-to-front onto canvas
+    ox.fillStyle='#000';ox.fillRect(0,0,rW,rH);
+    instances.forEach(inst=>{
+      const cls=getCls(inst.classId);if(!cls)return;
+      const iW=iDispW(inst),iH=iDispH(inst);
+      const ox1=Math.max(roi.x,inst.x),oy1=Math.max(roi.y,inst.y);
+      const ox2=Math.min(roi.x+rW,inst.x+iW),oy2=Math.min(roi.y+rH,inst.y+iH);
+      if(ox2<=ox1||oy2<=oy1)return;
+      const cc=clsToCanvas(cls,{...inst,opacity:1},cmap);
+      ox.drawImage(cc, (inst.x-roi.x), (inst.y-roi.y), iW, iH);
+    });
+    const id=ox.getImageData(0,0,rW,rH).data;
+    const out=new Float32Array(rW*rH);
+    for(let i=0;i<rW*rH;i++)out[i]=id[i*4];
+    return{data:out,W:rW,H:rH};
+  }
+}
+
 function openXS(){
   if(!roi){alert('Draw ROI first (R key).');return;}
-  const patch=captureROI();if(!patch){alert('ROI outside canvas content.');return;}
-  [document.getElementById('xs-prev'),document.getElementById('xs-pc')].forEach(c=>{c.width=patch.width;c.height=patch.height;c.getContext('2d').drawImage(patch,0,0);});
-  document.getElementById('xs-pi2').textContent=`${patch.width}×${patch.height}`;
-  document.getElementById('xs-pinf').textContent=`${patch.width}×${patch.height} px`;
-  document.getElementById('xs-outsz').value=Math.min(512,nextP2(Math.min(patch.width,patch.height)));
-  openMo('xs-modal');setTimeout(()=>runRadon(),60);
+  if(!instances.length){alert('Add class averages to the canvas first.');return;}
+  if(roi){
+    document.getElementById('xs-roi-w').value=Math.round(roi.w);
+    document.getElementById('xs-roi-h').value=Math.round(roi.h);
+  }
+  openMo('xs-modal');
+  setTimeout(()=>runRadon(),80);
 }
-function fft(re,im,inv){const n=re.length;for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}for(let len=2;len<=n;len<<=1){const a=2*Math.PI/len*(inv?-1:1),wr=Math.cos(a),wi=Math.sin(a);for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let j=0;j<len/2;j++){const ur=re[i+j],ui=im[i+j],vr=re[i+j+len/2]*cr-im[i+j+len/2]*ci,vi=re[i+j+len/2]*ci+im[i+j+len/2]*cr;re[i+j]=ur+vr;im[i+j]=ui+vi;re[i+j+len/2]=ur-vr;im[i+j+len/2]=ui-vi;const nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr;}}}if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}}
-function nextP2(n){let p=1;while(p<n)p<<=1;return p;}
-function filtProj(proj,ft){const n=proj.length,n2=nextP2(n*2);const re=new Float64Array(n2),im=new Float64Array(n2);for(let i=0;i<n;i++)re[i]=proj[i];fft(re,im,false);for(let k=0;k<n2;k++){const f=k<=n2/2?k/n2:(n2-k)/n2;let w=ft==='none'?1:2*f;if(ft==='hamming')w*=0.54+0.46*Math.cos(Math.PI*f*2);else if(ft==='hann')w*=0.5+0.5*Math.cos(Math.PI*f*2);re[k]*=w;im[k]*=w;}fft(re,im,true);const out=new Float32Array(n);for(let i=0;i<n;i++)out[i]=re[i];return out;}
+
 async function runRadon(){
-  const patch=captureROI();if(!patch)return;
-  const nA=Math.max(36,+document.getElementById('xs-nang').value||180),ft=document.getElementById('xs-filt').value,mode=document.getElementById('xs-mode').value;
+  document.getElementById('xs-pw').style.display='';
+  setPg('xs',0,'Building stitched image…');
+  document.getElementById('xs-ent-wrap').style.display='none';
+  await yf();
+
+  const result=buildStitchedROIFast();
+  if(!result){document.getElementById('xs-pw').style.display='none';alert('No instances overlap the ROI.');return;}
+  const{data:sino, W:sinoW, H:sinoH}=result;
+
+  // PANE 1: show stitched image
+  const pc=document.getElementById('xs-pc');
+  const pcp=document.getElementById('xs-prev');
+  [pc,pcp].forEach(c=>{
+    c.width=sinoW;c.height=sinoH;
+    const id=c.getContext('2d').createImageData(sinoW,sinoH);
+    let mn=Infinity,mx=-Infinity;
+    for(let i=0;i<sino.length;i++){mn=Math.min(mn,sino[i]);mx=Math.max(mx,sino[i]);}
+    const rng=mx-mn||1;
+    for(let i=0;i<sino.length;i++){const v=Math.round((sino[i]-mn)/rng*255);id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255;}
+    c.getContext('2d').putImageData(id,0,0);
+  });
+  const nClass=instances.filter(inst=>{const iW=iDispW(inst),iH=iDispH(inst);return inst.x<roi.x+sinoW&&inst.x+iW>roi.x&&inst.y<roi.y+sinoH&&inst.y+iH>roi.y;}).length;
+  document.getElementById('xs-pi2').textContent=`${sinoW}×${sinoH}`;
+  document.getElementById('xs-pinf').textContent=`${sinoW}×${sinoH} px  ·  ${nClass} classes`;
+
+  // PANE 2: direct back-projection (RELION-style)
+  // Each column x of the stitched image = 1D projection at azimuthal angle θ = x/W × π.
+  // The Y axis = radial/transverse direction.
+  setPg('xs',12,'Back-projecting…');await yf();
+
   const outSz=Math.min(1024,Math.max(32,+document.getElementById('xs-outsz').value||256));
   document.getElementById('xs-outsz').value=outSz;
-  const W=patch.width,H=patch.height,gd=patch.getContext('2d').getImageData(0,0,W,H);
-  const gray=new Float32Array(W*H);for(let i=0;i<W*H;i++)gray[i]=gd.data[i*4];
-  const diag=Math.ceil(Math.sqrt(W*W+H*H)),nR=diag%2===0?diag:diag+1,cxP=W/2,cyP=H/2;
-  document.getElementById('xs-np').textContent=nA;document.getElementById('xs-nr').textContent=nR;document.getElementById('xs-os').textContent=`${outSz}×${outSz}`;
-  document.getElementById('xs-pw').style.display='';setPg('xs',0,'Sinogram…');document.getElementById('xs-ent-wrap').style.display='none';
-  const sino=new Float32Array(nA*nR);
-  if(mode==='x'){const toc=document.createElement('canvas');toc.width=nR;toc.height=nR;const tcx=toc.getContext('2d');for(let a=0;a<nA;a++){tcx.clearRect(0,0,nR,nR);tcx.save();tcx.translate(nR/2,nR/2);tcx.rotate(a*Math.PI/nA);tcx.drawImage(patch,-cxP,-cyP);tcx.restore();const fd=tcx.getImageData(0,0,nR,nR).data;for(let x=0;x<nR;x++){let s=0;for(let y=0;y<nR;y++)s+=fd[(y*nR+x)*4];sino[a*nR+x]=s/nR;}if(a%10===0){setPg('xs',a/nA*38,`Sino ${a}/${nA}`);await yf();}}
-  }else{for(let a=0;a<nA;a++){const theta=a*Math.PI/nA,ct=Math.cos(theta),st=Math.sin(theta);const acc=new Float32Array(nR),cnt=new Float32Array(nR);for(let y=0;y<H;y++)for(let x=0;x<W;x++){const t=Math.round((x-cxP)*ct+(y-cyP)*st+nR/2);if(t>=0&&t<nR){acc[t]+=gray[y*W+x];cnt[t]++;}}for(let r=0;r<nR;r++)sino[a*nR+r]=cnt[r]>0?acc[r]/cnt[r]:0;if(a%10===0){setPg('xs',a/nA*38,`Sino ${a}/${nA}`);await yf();}}}
-  const sc2=document.getElementById('xs-sc');sc2.width=nR;sc2.height=nA;const sid=sc2.getContext('2d').createImageData(nR,nA);let smn=Infinity,smx=-Infinity;for(let i=0;i<sino.length;i++){smn=Math.min(smn,sino[i]);smx=Math.max(smx,sino[i]);}const srng=smx-smn||1;for(let i=0;i<sino.length;i++){const v=Math.round((sino[i]-smn)/srng*255);sid.data[i*4]=sid.data[i*4+1]=sid.data[i*4+2]=v;sid.data[i*4+3]=255;}sc2.getContext('2d').putImageData(sid,0,0);document.getElementById('xs-si').textContent=`${nR}×${nA}`;
-  setPg('xs',42,'Filtering…');await yf();
-  const fsino=new Float32Array(nA*nR);for(let a=0;a<nA;a++){const p=sino.slice(a*nR,(a+1)*nR);fsino.set(ft==='none'?p:filtProj(p,ft),a*nR);if(a%10===0){setPg('xs',42+a/nA*25,'Filter…');await yf();}}
-  setPg('xs',67,'Back-proj…');await yf();
-  const recon=new Float32Array(outSz*outSz),cx2=outSz/2,cy2=outSz/2,sc3=nR/outSz;
-  for(let y=0;y<outSz;y++){for(let x=0;x<outSz;x++){const wx=(x-cx2)*sc3,wy=(y-cy2)*sc3;let sum=0;for(let a=0;a<nA;a++){const t=wx*Math.cos(a*Math.PI/nA)+wy*Math.sin(a*Math.PI/nA)+nR/2;const i0=Math.floor(t),f=t-i0;if(i0>=0&&i0<nR-1)sum+=fsino[a*nR+i0]*(1-f)+fsino[a*nR+i0+1]*f;else if(i0>=0&&i0<nR)sum+=fsino[a*nR+i0];}recon[y*outSz+x]=sum*Math.PI/(2*nA);}if(y%8===0){setPg('xs',67+y/outSz*30,`Row ${y}`);await yf();}}
-  setPg('xs',100,'Done');fbpData=recon;fbpSz=outSz;
-  // Compute entropy
+  const recon=new Float32Array(outSz*outSz);
+  const cxr=outSz/2, cyr=outSz/2;
+  const nAngles=sinoW;
+
+  for(let a=0;a<nAngles;a++){
+    const theta=(a/nAngles)*Math.PI;
+    const cosT=Math.cos(theta), sinT=Math.sin(theta);
+    for(let oy=0;oy<outSz;oy++){
+      for(let ox=0;ox<outSz;ox++){
+        // Perpendicular distance from centre along direction θ
+        const t=(ox-cxr)*cosT+(oy-cyr)*sinT;
+        // Map t to row in this sinogram column
+        const row=t*(sinoH/outSz)+sinoH/2;
+        const r0=Math.floor(row), rf=row-r0;
+        let val=0;
+        if(r0>=0&&r0<sinoH-1)      val=sino[r0*sinoW+a]*(1-rf)+sino[(r0+1)*sinoW+a]*rf;
+        else if(r0>=0&&r0<sinoH)   val=sino[r0*sinoW+a];
+        recon[oy*outSz+ox]+=val;
+      }
+    }
+    if(a%20===0){setPg('xs',12+a/nAngles*55,`Back-proj ${a}/${nAngles}`);await yf();}
+  }
+  const normF=Math.PI/(2*nAngles);
+  for(let i=0;i<recon.length;i++) recon[i]*=normF;
+
+  fbpData=recon; fbpSz=outSz;
+
   const entropyBits=shannonEntropy(recon);
   document.getElementById('xs-entropy').textContent=entropyBits.toFixed(4);
   document.getElementById('xs-ent-wrap').style.display='';
+  document.getElementById('xs-si').textContent=`${outSz}×${outSz}`;
+
+  // PANE 3: forward reprojection for quality check.
+  // To make structure visible (not just flat background), subtract mean from
+  // recon before reprojecting — this isolates the structural signal.
+  setPg('xs',70,'Reprojecting…');await yf();
+  const rmean=recon.reduce((s,v)=>s+v,0)/recon.length;
+  const reconAC=new Float32Array(recon.length);
+  for(let i=0;i<recon.length;i++) reconAC[i]=recon[i]-rmean;
+
+  const reproj=new Float32Array(sinoW*sinoH);
+  for(let a=0;a<sinoW;a++){
+    const theta=(a/sinoW)*Math.PI;
+    const cosT=Math.cos(theta), sinT=Math.sin(theta);
+    const perpX=-sinT, perpY=cosT;
+    const halfLen=outSz*0.72;
+    for(let y=0;y<sinoH;y++){
+      const t=(y-sinoH/2)*(outSz/sinoH);
+      // Line-integrate reconAC along direction perpT at distance t
+      const basex=cxr+t*cosT, basey=cyr+t*sinT;
+      let sum=0, cnt=0;
+      for(let s=-halfLen;s<=halfLen;s+=1){
+        const px=basex+s*perpX, py=basey+s*perpY;
+        const ix=Math.round(px), iy=Math.round(py);
+        if(ix>=0&&ix<outSz&&iy>=0&&iy<outSz){sum+=reconAC[iy*outSz+ix];cnt++;}
+      }
+      reproj[y*sinoW+a]=cnt>0?sum/cnt:0;
+    }
+    if(a%20===0){setPg('xs',70+a/sinoW*28,`Reproj ${a}/${sinoW}`);await yf();}
+  }
+
+  // Store raw reprojection data globally so renderXS can re-apply contrast
+  xsReprojData=reproj; xsReprojW=sinoW; xsReprojH=sinoH;
+  document.getElementById('xs-ri').textContent=`${sinoW}×${sinoH}`;
+
   renderXS();
-  // Fit viewport to new image
-  setTimeout(xsZoomReset,50);
-  document.getElementById('xs-ri').textContent=`${outSz}×${outSz}`;
+  setTimeout(()=>{xsZoomReset();xsScZoomReset();},50);
+  setPg('xs',100,'Done');
   setTimeout(()=>document.getElementById('xs-pw').style.display='none',600);
+}
+
+function renderXS(){
+  if(!fbpData)return;
+  const cm=+document.getElementById('xs-cm').value, cx2_=+document.getElementById('xs-cx').value;
+  const inv=document.getElementById('xs-inv').checked;
+  const gamma=+document.getElementById('xs-gamma').value||1;
+  const bright=(+document.getElementById('xs-bright').value||0)/100;
+  document.getElementById('xs-cm-v').textContent=cm.toFixed(1);
+  document.getElementById('xs-cx-v').textContent=cx2_.toFixed(1);
+  document.getElementById('xs-gamma-v').textContent=gamma.toFixed(2);
+  document.getElementById('xs-bright-v').textContent=document.getElementById('xs-bright').value;
+  xsGamma=gamma; xsBright=bright;
+  xsManLo=+document.getElementById('xs-man-lo').value||0;
+  xsManHi=+document.getElementById('xs-man-hi').value||255;
+
+  // Pane 2: cross-section with Cn sym + contrast
+  const symN=+document.getElementById('xs-sym')?.value||1;
+  const displayData=symN>1?applyCnSym(fbpData,fbpSz,symN):fbpData;
+  const sc=document.getElementById('xs-sc');
+  drawF32(displayData,fbpSz,fbpSz,sc,cm,cx2_,inv,gamma,bright,xsCMode,xsManLo,xsManHi);
+  drawXSScViewport();
+
+  // Pane 3: reprojection with same contrast
+  if(xsReprojData){
+    const rc=document.getElementById('xs-rc');
+    drawF32(xsReprojData,xsReprojW,xsReprojH,rc,cm,cx2_,inv,gamma,bright,xsCMode,xsManLo,xsManHi);
+    drawXSViewport();
+  }
+}
+
+// === Pane 2 viewport (cross-section) ===
+function drawXSScViewport(){
+  const src=document.getElementById('xs-sc');
+  const vp=document.getElementById('xs-sc-vp');
+  const wrap=document.getElementById('xs-sc-wrap');
+  if(!wrap||!src.width)return;
+  vp.width=wrap.clientWidth; vp.height=wrap.clientHeight;
+  const ctx=vp.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,vp.width,vp.height);
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(src, xsScVpX, xsScVpY, src.width*xsScVpZ, src.height*xsScVpZ);
+  ctx.restore();
+  ctx.fillStyle='rgba(219,157,71,.7)'; ctx.font='10px "IBM Plex Mono"';
+  ctx.fillText(`${Math.round(xsScVpZ*100)}%`,6,16);
+}
+function xsScZoomReset(){
+  const src=document.getElementById('xs-sc');
+  const wrap=document.getElementById('xs-sc-wrap');
+  if(!src.width||!wrap)return;
+  xsScVpZ=Math.min(wrap.clientWidth/src.width, wrap.clientHeight/src.height);
+  xsScVpX=(wrap.clientWidth-src.width*xsScVpZ)/2;
+  xsScVpY=(wrap.clientHeight-src.height*xsScVpZ)/2;
+  drawXSScViewport();
+}
+function xsScZoom(f){
+  const wrap=document.getElementById('xs-sc-wrap');
+  if(!wrap)return;
+  const cx=wrap.clientWidth/2, cy=wrap.clientHeight/2;
+  const wx=(cx-xsScVpX)/xsScVpZ, wy=(cy-xsScVpY)/xsScVpZ;
+  xsScVpZ=Math.max(0.1,Math.min(20,xsScVpZ*f));
+  xsScVpX=cx-wx*xsScVpZ; xsScVpY=cy-wy*xsScVpZ;
+  drawXSScViewport();
+}
+function initXSScViewport(){
+  const vp=document.getElementById('xs-sc-vp');
+  const wrap=document.getElementById('xs-sc-wrap');
+  if(!vp||!wrap)return;
+  vp.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const r=vp.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const f=e.deltaY<0?1.15:1/1.15;
+    const wx=(mx-xsScVpX)/xsScVpZ, wy=(my-xsScVpY)/xsScVpZ;
+    xsScVpZ=Math.max(0.1,Math.min(20,xsScVpZ*f));
+    xsScVpX=mx-wx*xsScVpZ; xsScVpY=my-wy*xsScVpZ;
+    drawXSScViewport();
+  },{passive:false});
+  let d=null;
+  vp.addEventListener('mousedown',e=>{d={sx:e.clientX,sy:e.clientY,ox:xsScVpX,oy:xsScVpY};e.preventDefault();});
+  window.addEventListener('mousemove',e=>{if(!d)return;xsScVpX=d.ox+(e.clientX-d.sx);xsScVpY=d.oy+(e.clientY-d.sy);drawXSScViewport();});
+  window.addEventListener('mouseup',()=>{d=null;});
+}
+
+function xsAutoManual(){
+  if(!fbpData)return;
+  let mn=Infinity,mx=-Infinity;
+  for(let i=0;i<fbpData.length;i++){mn=Math.min(mn,fbpData[i]);mx=Math.max(mx,fbpData[i]);}
+  document.getElementById('xs-man-lo').value=mn.toFixed(4);
+  document.getElementById('xs-man-hi').value=mx.toFixed(4);
+  xsManLo=mn;xsManHi=mx;
+  renderXS();
 }
 function setXSCMode(m){
   xsCMode=m;
@@ -1528,37 +1911,9 @@ function setXSCMode(m){
   document.getElementById('xs-cmode-manual').style.display=m==='manual'?'':'none';
   renderXS();
 }
-function xsAutoManual(){
-  if(!fbpData)return;
-  let mn=Infinity,mx=-Infinity;
-  for(let i=0;i<fbpData.length;i++){mn=Math.min(mn,fbpData[i]);mx=Math.max(mx,fbpData[i]);}
-  document.getElementById('xs-man-lo').value=mn.toFixed(4);
-  document.getElementById('xs-man-hi').value=mx.toFixed(4);
-  xsManLo=mn;xsManHi=mx;
-  renderXS();
-}
-
-function renderXS(){
-  if(!fbpData)return;
-  const cm=+document.getElementById('xs-cm').value,cx2=+document.getElementById('xs-cx').value;
-  const inv=document.getElementById('xs-inv').checked;
-  const gamma=+document.getElementById('xs-gamma').value||1;
-  const bright=(+document.getElementById('xs-bright').value||0)/100;
-  document.getElementById('xs-cm-v').textContent=cm.toFixed(1);
-  document.getElementById('xs-cx-v').textContent=cx2.toFixed(1);
-  document.getElementById('xs-gamma-v').textContent=gamma.toFixed(2);
-  document.getElementById('xs-bright-v').textContent=document.getElementById('xs-bright').value;
-  xsGamma=gamma;xsBright=bright;
-  xsManLo=+document.getElementById('xs-man-lo').value||0;
-  xsManHi=+document.getElementById('xs-man-hi').value||255;
-  // Apply Cn symmetry to FBP result for display
-  const symN=+document.getElementById('xs-sym')?.value||1;
-  const displayData=symN>1?applyCnSym(fbpData,fbpSz,symN):fbpData;
-  // Render fbpData into the hidden canvas xs-rc, then draw into viewport
-  const rc=document.getElementById('xs-rc');
-  drawF32(displayData,fbpSz,fbpSz,rc,cm,cx2,inv,gamma,bright,xsCMode,xsManLo,xsManHi);
-  drawXSViewport();
-}
+// FFT — used by periodicity autocorrelation scan
+function fft(re,im,inv){const n=re.length;for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}for(let len=2;len<=n;len<<=1){const a=2*Math.PI/len*(inv?-1:1),wr=Math.cos(a),wi=Math.sin(a);for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let j=0;j<len/2;j++){const ur=re[i+j],ui=im[i+j],vr=re[i+j+len/2]*cr-im[i+j+len/2]*ci,vi=re[i+j+len/2]*ci+im[i+j+len/2]*cr;re[i+j]=ur+vr;im[i+j]=ui+vi;re[i+j+len/2]=ur-vr;im[i+j+len/2]=ui-vi;const nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr;}}}if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}}
+function nextP2(n){let p=1;while(p<n)p<<=1;return p;}
 
 function drawXSViewport(){
   const src=document.getElementById('xs-rc');
@@ -1869,6 +2224,134 @@ async function comp3D(){
   setPg('v3d',100,'Done');btn.disabled=false;setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);
 }
 function wMRC(data,nx,ny,nz,pixSz){const buf=new ArrayBuffer(1024+nx*ny*nz*4),dv=new DataView(buf);dv.setInt32(0,nx,true);dv.setInt32(4,ny,true);dv.setInt32(8,nz,true);dv.setInt32(12,2,true);dv.setInt32(28,nx,true);dv.setInt32(32,ny,true);dv.setInt32(36,nz,true);dv.setFloat32(40,nx*pixSz,true);dv.setFloat32(44,ny*pixSz,true);dv.setFloat32(48,nz*pixSz,true);dv.setFloat32(52,90,true);dv.setFloat32(56,90,true);dv.setFloat32(60,90,true);dv.setInt32(64,1,true);dv.setInt32(68,2,true);dv.setInt32(72,3,true);let mn=Infinity,mx=-Infinity,sm=0;for(let i=0;i<data.length;i++){mn=Math.min(mn,data[i]);mx=Math.max(mx,data[i]);sm+=data[i];}dv.setFloat32(76,mn,true);dv.setFloat32(80,mx,true);dv.setFloat32(84,sm/data.length,true);dv.setInt32(88,1,true);[77,65,80,32].forEach((c,i)=>dv.setUint8(208+i,c));dv.setUint8(212,0x44);dv.setUint8(213,0x44);new Float32Array(buf,1024).set(data);return buf;}
+
+// ═══════════════════════ SINOGRAM ROI LIVE ADJUST ═══════════════════════
+function xsSyncROIToPanel(){
+  // Pull current ROI dims into the sinogram sidebar inputs
+  if(roi){
+    document.getElementById('xs-roi-w').value=Math.round(roi.w);
+    document.getElementById('xs-roi-h').value=Math.round(roi.h);
+  }
+}
+function xsAdjustROI(){
+  // Resize ROI from the sinogram panel inputs, keeping its center fixed
+  const newW=Math.max(4,+document.getElementById('xs-roi-w').value||roi?.w||100);
+  const newH=Math.max(4,+document.getElementById('xs-roi-h').value||roi?.h||60);
+  if(!roi){roi={x:0,y:0,w:newW,h:newH};}
+  else{
+    const cx=roi.x+roi.w/2, cy=roi.y+roi.h/2;
+    roi={x:cx-newW/2, y:cy-newH/2, w:newW, h:newH};
+  }
+  // Update the ROI patch preview on the left of the sinogram modal
+  const patch=captureROI();
+  if(patch){
+    [document.getElementById('xs-prev'),document.getElementById('xs-pc')].forEach(c=>{
+      c.width=patch.width;c.height=patch.height;c.getContext('2d').drawImage(patch,0,0);
+    });
+    document.getElementById('xs-pi2').textContent=`${patch.width}×${patch.height}`;
+    document.getElementById('xs-pinf').textContent=`${patch.width}×${patch.height} px`;
+  }
+  syncROICtrl();updROIBadge();
+  // Re-render the main canvas in the background so the ROI overlay updates
+  render();
+}
+function xsRerunFromROI(){
+  // Resize if inputs have been edited, then rerun FBP
+  xsAdjustROI();
+  runRadon();
+}
+
+// ═══════════════════════ TEST DATASET ═══════════════════════
+function loadTestDataset(){
+  // Generate synthetic 2D class averages of a helical filament.
+  // Each class is a PROJECTION image (not a cross-section):
+  //   - Helix axis runs HORIZONTALLY (along X)
+  //   - The tube wall appears as two bright horizontal bands (top + bottom)
+  //   - Subunit blobs sinusoidally shift vertically along X as the helix winds
+  //   - Each class = different starting azimuthal angle (different part of helical repeat)
+  // This matches what real RELION/CryoSPARC 2D classes look like.
+
+  const BOX=128, N_CLS=12, PX=2.1;
+  const R_TUBE=24;      // tube radius (px from centre)
+  const WALL_SIG=4;     // wall Gaussian width
+  const R_SUB=16;       // subunit orbit radius
+  const PITCH=96;       // helical pitch in pixels
+  const N_SYM=3;        // C3 symmetry
+  const SUB_SIG2=20;    // subunit projected blob size (sigma^2)
+  const NOISE=0.10;
+
+  const pps=BOX*BOX;
+  const allData=new Float32Array(N_CLS*pps);
+
+  for(let ci=0;ci<N_CLS;ci++){
+    // Starting azimuthal angle for this class
+    const phi0=ci*(2*Math.PI/N_CLS);
+    const slice=allData.subarray(ci*pps,(ci+1)*pps);
+
+    for(let y=0;y<BOX;y++){
+      const t=y-BOX/2;  // transverse distance from helix axis (signed)
+
+      for(let x=0;x<BOX;x++){
+        const x3d=x-BOX/2;  // axial position along helix
+
+        // === Tube wall: two bright Gaussian bands at t = ±R_TUBE ===
+        let v= 1.6*(Math.exp(-((t-R_TUBE)**2)/(WALL_SIG**2))
+               +   Math.exp(-((t+R_TUBE)**2)/(WALL_SIG**2)));
+
+        // === Lumen: faint bridge across the hollow interior ===
+        v += 0.25*Math.exp(-(t**2)/((R_TUBE*0.55)**2));
+
+        // === Subunits: analytic projection of 3D Gaussian blobs ===
+        // For each symmetry copy k, the subunit at axial x3d has azimuthal angle:
+        //   alpha = 2*PI*x3d/PITCH + k*2*PI/N_SYM + phi0
+        // Projected centre on the detector (Y axis):
+        //   y_sub = R_SUB * cos(alpha)   (after viewing along Z)
+        // The projection integrates along Z, giving a 1D Gaussian in t:
+        //   contribution ∝ exp(-(t - y_sub)^2 / SUB_SIG2)
+        for(let k=0;k<N_SYM;k++){
+          const alpha=2*Math.PI*x3d/PITCH + k*2*Math.PI/N_SYM + phi0;
+          const ySub=R_SUB*Math.cos(alpha);
+          const dt=t-ySub;
+          v += 0.85*Math.exp(-(dt*dt)/SUB_SIG2);
+        }
+
+        // === Noise (Box-Muller) ===
+        const u1=Math.random()||1e-10;
+        const noise=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*Math.random())*NOISE;
+
+        slice[y*BOX+x]=Math.max(0, v+noise);
+      }
+    }
+  }
+
+  // Pack into MRC float32
+  const buf=new ArrayBuffer(1024+N_CLS*pps*4);
+  const dv=new DataView(buf);
+  dv.setInt32(0,BOX,true);dv.setInt32(4,BOX,true);dv.setInt32(8,N_CLS,true);
+  dv.setInt32(12,2,true);  // float32
+  dv.setInt32(28,BOX,true);dv.setInt32(32,BOX,true);dv.setInt32(36,N_CLS,true);
+  dv.setFloat32(40,BOX*PX,true);dv.setFloat32(44,BOX*PX,true);dv.setFloat32(48,N_CLS*PX,true);
+  dv.setFloat32(52,90,true);dv.setFloat32(56,90,true);dv.setFloat32(60,90,true);
+  dv.setInt32(64,1,true);dv.setInt32(68,2,true);dv.setInt32(72,3,true);
+  [77,65,80,32].forEach((c,i)=>dv.setUint8(208+i,c));
+  dv.setUint8(212,0x44);dv.setUint8(213,0x44);
+  new Float32Array(buf,1024).set(allData);
+
+  parseMRC(buf,'C3_helical_filament_projections.mrcs');
+  // Auto-populate canvas in a single row (left → right = increasing azimuthal angle)
+  setTimeout(()=>{
+    addAll();
+    setTimeout(()=>{
+      // Arrange in a single horizontal row, sorted by class id
+      let cx=10;
+      instances.sort((a,b)=>a.classId-b.classId).forEach(inst=>{
+        inst.x=cx; inst.y=10;
+        cx+=iDispW(inst)+2;
+      });
+      render();zoomFit();
+    },50);
+  },100);
+}
 
 // ═══════════════════════ Z-ORDER ═══════════════════════
 function zBring(dir){
