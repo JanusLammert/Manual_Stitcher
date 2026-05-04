@@ -722,43 +722,69 @@ input[type=checkbox]{accent-color:var(--gold);}
 
 <!-- 3D MODAL -->
 <div class="mo" id="v3d-modal">
-  <div class="mbox" style="width:86vw;max-width:1080px;max-height:90vh">
-    <div class="mh"><div class="mt">⬡  3D Volume by Revolution</div><div class="mc" onclick="closeMo('v3d-modal')">✕</div></div>
+  <div class="mbox" style="width:88vw;max-width:1100px;max-height:90vh">
+    <div class="mh"><div class="mt">⬡  3D Initial Model — Helical Revolution</div><div class="mc" onclick="closeMo('v3d-modal')">✕</div></div>
     <div class="mbody" style="flex-direction:column">
       <div style="display:flex;flex:1;min-height:260px;overflow:hidden">
-        <div class="mpane"><div class="plbl">CROSS-SECTION<em id="v3d-xi"></em></div><div class="pwrap"><canvas id="v3d-xc"></canvas></div></div>
-        <div class="mpane"><div class="plbl">EQUATORIAL XZ<em id="v3d-ei"></em></div><div class="pwrap"><canvas id="v3d-ec"></canvas></div></div>
-        <div class="mpane"><div class="plbl">MERIDIONAL XY<em id="v3d-mi"></em></div><div class="pwrap"><canvas id="v3d-mc2"></canvas></div></div>
+        <div class="mpane"><div class="plbl">CROSS-SECTION (XY at Z=mid)<em id="v3d-xi"></em></div><div class="pwrap"><canvas id="v3d-xc"></canvas></div></div>
+        <div class="mpane"><div class="plbl">XZ SLICE at Y=mid<em id="v3d-ei"></em></div><div class="pwrap"><canvas id="v3d-ec"></canvas></div></div>
+        <div class="mpane"><div class="plbl">YZ SLICE at X=mid<em id="v3d-mi"></em></div><div class="pwrap"><canvas id="v3d-mc2"></canvas></div></div>
       </div>
-      <div style="display:flex;gap:16px;padding:12px 14px;background:var(--pan2);border-top:1px solid var(--bdr);flex-wrap:wrap;align-items:flex-start;flex-shrink:0">
-        <div style="display:flex;flex-direction:column;gap:6px;min-width:180px">
-          <div class="stit" style="margin:0">REVOLUTION</div>
-          <div class="fr"><div class="fl">AXIS</div><select class="fs" id="v3d-ax" onchange="prevSl()"><option value="y">Y — vertical</option><option value="x">X — horizontal</option></select></div>
-          <div class="fr"><div class="fl">Cn SYMMETRY</div>
-            <select class="fs" id="v3d-sym" onchange="prevSl()">
-              <option value="1">C1 (none)</option>
-              <option value="2">C2</option>
-              <option value="3">C3</option>
-              <option value="4">C4</option>
-              <option value="5">C5</option>
-              <option value="6">C6</option>
-              <option value="7">C7</option>
-              <option value="8">C8</option>
-              <option value="12">C12</option>
-            </select>
-          </div>
-          <div class="fr"><div class="fl">MAX RADIUS</div><input type="number" class="fi" id="v3d-r" placeholder="auto" min="4" onchange="prevSl()"><div class="tblbl">px</div></div>
-          <div class="fr"><div class="fl">CROSSOVER</div><input type="number" class="fi" id="v3d-co" placeholder="none" min="1" onchange="prevSl()"><div class="tblbl">px</div></div>
+      <div style="display:flex;gap:14px;padding:10px 14px;background:var(--pan2);border-top:1px solid var(--bdr);flex-wrap:wrap;align-items:flex-start;flex-shrink:0">
+
+        <!-- Cn symmetry -->
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:150px">
+          <div class="stit" style="margin:0">Cn SYMMETRY</div>
+          <select class="fs" id="v3d-sym" onchange="updVI()">
+            <option value="1">C1 (none)</option>
+            <option value="2">C2</option><option value="3">C3</option>
+            <option value="4">C4</option><option value="5">C5</option>
+            <option value="6">C6</option><option value="7">C7</option>
+            <option value="8">C8</option><option value="12">C12</option>
+          </select>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:180px">
+
+        <!-- Helical parameters -->
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:220px">
+          <div class="stit" style="margin:0">HELICAL PARAMETERS</div>
+          <div class="fr" style="margin-bottom:3px">
+            <div class="fl">RISE</div>
+            <input type="number" class="fi" id="v3d-rise" value="4.75" min="0.1" step="0.1" oninput="updVI()">
+            <div class="tblbl">Å/subunit</div>
+          </div>
+          <div class="fr" style="margin-bottom:3px">
+            <div class="fl">TWIST</div>
+            <input type="number" class="fi" id="v3d-twist" value="22.0" min="0" max="180" step="0.1" oninput="updVI()">
+            <div class="tblbl">°/subunit</div>
+          </div>
+          <div class="fr" style="margin-bottom:0">
+            <div class="fl">HANDEDNESS</div>
+            <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1">
+              <button id="v3d-hand-pos" onclick="setHand('+')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border:none;background:var(--navy);color:#ddf">+ Right</button>
+              <button id="v3d-hand-neg" onclick="setHand('-')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)">− Left</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:200px">
           <div class="stit" style="margin:0">OUTPUT</div>
-          <div class="ibox"><div>NX×NY×NZ: <span class="v" id="v3d-vol">—</span></div><div>Voxel: <span class="v" id="v3d-vox">—</span> Å/px</div><div>Size: <span class="v" id="v3d-fsz">—</span></div><div>Mode: <span class="v">2 (float32)</span></div></div>
+          <div class="ibox">
+            <div>Box: <span class="v" id="v3d-vol">—</span> (cubic)</div>
+            <div>Voxel: <span class="v" id="v3d-vox">—</span> Å/px</div>
+            <div>Data radius: <span class="v" id="v3d-cov">—</span> px = <span class="v" id="v3d-cov-ang">—</span> Å</div>
+            <div>Rise: <span class="v" id="v3d-rise-px">—</span> px/subunit</div>
+            <div>Crossover: <span class="v" id="v3d-co-ang">—</span> Å &nbsp;(<span class="v" id="v3d-co-px">—</span> px)</div>
+            <div>File: <span class="v" id="v3d-fsz">—</span></div>
+          </div>
           <div id="v3d-pw" style="display:none"><div class="plbl2" id="v3d-pl">Computing…</div><div class="pbar"><div class="pfill" id="v3d-pg" style="width:0%"></div></div></div>
         </div>
+
+        <!-- Buttons -->
         <div style="display:flex;flex-direction:column;gap:7px;align-self:flex-end">
           <button class="btn pri" style="width:auto;padding:5px 14px" onclick="prevSl()">Preview Slices</button>
           <button class="btn gld" id="v3d-btn" style="width:auto;padding:6px 18px" onclick="comp3D()">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export MRC
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download MRC
           </button>
         </div>
       </div>
@@ -832,6 +858,8 @@ let xsVpZ=1, xsVpX=0, xsVpY=0;
 let xsScVpZ=1, xsScVpX=0, xsScVpY=0;
 // Raw computed data (needed so contrast sliders can re-render without recomputing)
 let xsReprojData=null, xsReprojW=0, xsReprojH=0;
+let xsSinoH=0;
+let helicalHand=1;  // +1 = right-handed, -1 = left-handed
 let thumbH=56;
 
 const MC=document.getElementById('mc');
@@ -1748,14 +1776,15 @@ async function runRadon(){
     const cosT=Math.cos(theta), sinT=Math.sin(theta);
     for(let oy=0;oy<outSz;oy++){
       for(let ox=0;ox<outSz;ox++){
-        // Perpendicular distance from centre along direction θ
+        // Perpendicular distance from centre along direction θ (in output pixels = data pixels, 1:1)
         const t=(ox-cxr)*cosT+(oy-cyr)*sinT;
-        // Map t to row in this sinogram column
-        const row=t*(sinoH/outSz)+sinoH/2;
+        // Map t to row in this sinogram column — 1:1, no rescaling
+        // row=0 at top of sino, row=sinoH-1 at bottom; t=0 = helix axis = sinoH/2
+        const row=t+sinoH/2;
         const r0=Math.floor(row), rf=row-r0;
         let val=0;
-        if(r0>=0&&r0<sinoH-1)      val=sino[r0*sinoW+a]*(1-rf)+sino[(r0+1)*sinoW+a]*rf;
-        else if(r0>=0&&r0<sinoH)   val=sino[r0*sinoW+a];
+        if(r0>=0&&r0<sinoH-1)    val=sino[r0*sinoW+a]*(1-rf)+sino[(r0+1)*sinoW+a]*rf;
+        else if(r0>=0&&r0<sinoH) val=sino[r0*sinoW+a];
         recon[oy*outSz+ox]+=val;
       }
     }
@@ -1764,7 +1793,7 @@ async function runRadon(){
   const normF=Math.PI/(2*nAngles);
   for(let i=0;i<recon.length;i++) recon[i]*=normF;
 
-  fbpData=recon; fbpSz=outSz;
+  fbpData=recon; fbpSz=outSz; xsSinoH=sinoH;
 
   const entropyBits=shannonEntropy(recon);
   document.getElementById('xs-entropy').textContent=entropyBits.toFixed(4);
@@ -2177,53 +2206,169 @@ function getSymData(){
   const n=+document.getElementById('v3d-sym')?.value||1;
   return n>1?applyCnSym(fbpData,fbpSz,n):fbpData;
 }
+
+// Bilinear sample of cross-section image at floating-point pixel coords
+function sampleXS2D(xs_x,xs_y,data){
+  const sz=fbpSz;
+  const ix=Math.floor(xs_x),iy2=Math.floor(xs_y);
+  if(ix<0||ix>=sz-1||iy2<0||iy2>=sz-1)return 0;
+  const fx=xs_x-ix,fy=xs_y-iy2;
+  return data[iy2*sz+ix]*(1-fx)*(1-fy)
+        +data[iy2*sz+ix+1]*fx*(1-fy)
+        +data[(iy2+1)*sz+ix]*(1-fx)*fy
+        +data[(iy2+1)*sz+ix+1]*fx*fy;
+}
+
+// Sample helical volume at (r, phi_rel) — phi_rel is azimuthal angle in
+// the cross-section reference frame after untwisting for height iy
+function sampleHelical(r,phi_rel,symData,rCov){
+  if(r>rCov)return 0;
+  const sz=fbpSz,cx=sz/2,cy=sz/2;
+  return sampleXS2D(cx+r*Math.cos(phi_rel),cy+r*Math.sin(phi_rel),symData);
+}
+
+function setHand(h){
+  helicalHand=h==='+'?1:-1;
+  const pos=document.getElementById('v3d-hand-pos');
+  const neg=document.getElementById('v3d-hand-neg');
+  if(!pos||!neg)return;
+  pos.style.background=h==='+'?'var(--navy)':'var(--pan3)';
+  pos.style.color=h==='+'?'#ddf':'var(--txt-d)';
+  neg.style.background=h==='-'?'var(--navy)':'var(--pan3)';
+  neg.style.color=h==='-'?'#ddf':'var(--txt-d)';
+  updVI();
+}
+
+function updVI(){
+  if(!fbpData)return;
+  const sz=fbpSz,px=+document.getElementById('px-inp').value||1;
+  const rise_ang=+document.getElementById('v3d-rise').value||4.75;
+  const twist_deg=+document.getElementById('v3d-twist').value||22.0;
+  const rCov=xsSinoH/2;
+  const rise_px=rise_ang/px;
+  // Crossover = half-turn distance: subunits per 180deg * rise
+  const n180=180/Math.max(0.001,twist_deg);
+  const co_ang=n180*rise_ang;
+  const co_px=co_ang/px;
+  document.getElementById('v3d-vol').textContent=sz+' x '+sz+' x '+sz;
+  document.getElementById('v3d-vox').textContent=px.toFixed(4);
+  document.getElementById('v3d-cov').textContent=Math.round(rCov);
+  document.getElementById('v3d-cov-ang').textContent=(rCov*px).toFixed(1);
+  document.getElementById('v3d-rise-px').textContent=rise_px.toFixed(2);
+  document.getElementById('v3d-co-ang').textContent=co_ang.toFixed(1);
+  document.getElementById('v3d-co-px').textContent=co_px.toFixed(1);
+  document.getElementById('v3d-fsz').textContent='~'+(sz*sz*sz*4/1048576).toFixed(1)+' MB';
+}
+
 function open3D(){
-  if(!fbpData){alert('Run FBP first.');return;}
+  if(!fbpData){alert('Run cross-section computation first.');return;}
   closeMo('xs-modal');
-  // Sync Cn value from sinogram modal to 3D modal
   const xsSym=document.getElementById('xs-sym')?.value||'1';
   document.getElementById('v3d-sym').value=xsSym;
-  const symData=getSymData();
-  drawF32(symData,fbpSz,fbpSz,document.getElementById('v3d-xc'),-3,3,false);
-  document.getElementById('v3d-xi').textContent=`${fbpSz}×${fbpSz}`;
-  document.getElementById('v3d-r').value=Math.floor(fbpSz/2);
   updVI();openMo('v3d-modal');
+  setTimeout(()=>prevSl(),80);
 }
-function sXS(r,iy,data){
-  const sz=fbpSz,cx=sz/2,cy=sz/2,ax=document.getElementById('v3d-ax').value;
-  let col,row;
-  if(ax==='y'){col=Math.round(cx+r);row=iy;}else{col=iy;row=Math.round(cy+r);}
-  col=Math.max(0,Math.min(sz-1,col));row=Math.max(0,Math.min(sz-1,row));
-  return(data||fbpData)[row*sz+col];
-}
+
 function prevSl(){
-  if(!fbpData)return;updVI();
+  if(!fbpData)return; updVI();
   const symData=getSymData();
-  drawF32(symData,fbpSz,fbpSz,document.getElementById('v3d-xc'),-3,3,false);
-  const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,bXZ=r*2,bY=sz;
-  const eq=new Float32Array(bXZ*bXZ),mid=Math.floor(bY/2);
-  for(let iz=0;iz<bXZ;iz++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;eq[iz*bXZ+ix]=sXS(rr,mid,symData);}
-  drawF32(eq,bXZ,bXZ,document.getElementById('v3d-ec'),-3,3,false);document.getElementById('v3d-ei').textContent=`${bXZ}×${bXZ}`;
-  const mer=new Float32Array(bXZ*bY);
-  for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,rr=Math.abs(dx);if(rr>r||(co>0&&rr>co))continue;mer[iy*bXZ+ix]=sXS(rr,iy,symData);}
-  drawF32(mer,bXZ,bY,document.getElementById('v3d-mc2'),-3,3,false);document.getElementById('v3d-mi').textContent=`${bXZ}×${bY}`;
+  const sz=fbpSz,cx=sz/2,cy=sz/2;
+  const rCov=Math.max(1,xsSinoH/2);
+  const px=+document.getElementById('px-inp').value||1;
+  const rise_ang=+document.getElementById('v3d-rise').value||4.75;
+  const twist_deg=+document.getElementById('v3d-twist').value||22.0;
+  const twist_rad=twist_deg*Math.PI/180;
+  const rise_px=rise_ang/px;
+  const tpp=helicalHand*twist_rad/rise_px; // twist per pixel along Y
+
+  // Pane 1: cross-section at Y=0 twist (just show symData)
+  drawF32(symData,sz,sz,document.getElementById('v3d-xc'),-3,3,false);
+  document.getElementById('v3d-xi').textContent=sz+'x'+sz;
+
+  // Pane 2: XZ slice at mid-Y
+  const eq=new Float32Array(sz*sz);
+  const twist_mid=(Math.floor(sz/2)-cy)*tpp;
+  for(let iz=0;iz<sz;iz++){
+    for(let ix=0;ix<sz;ix++){
+      const dx=ix-cx,dz=iz-cy,r=Math.sqrt(dx*dx+dz*dz);
+      if(r>rCov)continue;
+      eq[iz*sz+ix]=sampleHelical(r,Math.atan2(dz,dx)-twist_mid,symData,rCov);
+    }
+  }
+  drawF32(eq,sz,sz,document.getElementById('v3d-ec'),-3,3,false);
+  document.getElementById('v3d-ei').textContent=sz+'x'+sz;
+
+  // Pane 3: YZ slice at mid-X
+  const mer=new Float32Array(sz*sz);
+  for(let iy=0;iy<sz;iy++){
+    const tw=(iy-cy)*tpp;
+    for(let iz=0;iz<sz;iz++){
+      const dx=Math.floor(sz/2)-cx,dz=iz-cy,r=Math.sqrt(dx*dx+dz*dz);
+      if(r>rCov)continue;
+      mer[iy*sz+iz]=sampleHelical(r,Math.atan2(dz,dx)-tw,symData,rCov);
+    }
+  }
+  drawF32(mer,sz,sz,document.getElementById('v3d-mc2'),-3,3,false);
+  document.getElementById('v3d-mi').textContent=sz+'x'+sz;
 }
+
 async function comp3D(){
   if(!fbpData)return;
   const symData=getSymData();
-  const sz=fbpSz,r=Math.min(sz,+document.getElementById('v3d-r').value||Math.floor(sz/2)),co=+document.getElementById('v3d-co').value||0,px=+document.getElementById('px-inp').value||1,bXZ=r*2,bY=sz,btn=document.getElementById('v3d-btn');
-  btn.disabled=true;document.getElementById('v3d-pw').style.display='';setPg('v3d',0,'Alloc…');await yf();
-  const vol=new Float32Array(bXZ*bY*bXZ);
-  for(let iz=0;iz<bXZ;iz++){
-    for(let iy=0;iy<bY;iy++)for(let ix=0;ix<bXZ;ix++){const dx=ix-bXZ/2,dz=iz-bXZ/2,rr=Math.sqrt(dx*dx+dz*dz);if(rr>r||(co>0&&rr>co))continue;vol[iz*bY*bXZ+iy*bXZ+ix]=sXS(rr,iy,symData);}
-    if(iz%4===0){setPg('v3d',iz/bXZ*94,`Layer ${iz}/${bXZ}`);await yf();}
+  const sz=fbpSz,cx=sz/2,cy=sz/2;
+  const rCov=Math.max(1,xsSinoH/2);
+  const px=+document.getElementById('px-inp').value||1;
+  const rise_ang=+document.getElementById('v3d-rise').value||4.75;
+  const twist_deg=+document.getElementById('v3d-twist').value||22.0;
+  const twist_rad=twist_deg*Math.PI/180;
+  const rise_px=rise_ang/px;
+  const tpp=helicalHand*twist_rad/rise_px;
+  const btn=document.getElementById('v3d-btn');
+  btn.disabled=true;document.getElementById('v3d-pw').style.display='';
+  setPg('v3d',0,'Allocating...');await yf();
+
+  const vol=new Float32Array(sz*sz*sz);
+  for(let iz=0;iz<sz;iz++){
+    for(let iy=0;iy<sz;iy++){
+      const tw=(iy-cy)*tpp;  // twist accumulated at this Y height
+      for(let ix=0;ix<sz;ix++){
+        const dx=ix-cx,dz=iz-cy,r=Math.sqrt(dx*dx+dz*dz);
+        if(r>rCov)continue;
+        // untwist the azimuthal angle by the accumulated helix rotation at iy
+        vol[iz*sz*sz+iy*sz+ix]=sampleHelical(r,Math.atan2(dz,dx)-tw,symData,rCov);
+      }
+    }
+    if(iz%4===0){setPg('v3d',iz/sz*95,'Slice '+iz+'/'+sz);await yf();}
   }
-  setPg('v3d',97,'MRC…');await yf();
-  const buf=wMRC(vol,bXZ,bY,bXZ,px);
-  const blob=new Blob([buf],{type:'application/octet-stream'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='reconstruction_3d.mrc';a.click();URL.revokeObjectURL(url);
-  setPg('v3d',100,'Done');btn.disabled=false;setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);
+
+  setPg('v3d',96,'Writing MRC...');await yf();
+  const buf=wMRC(vol,sz,sz,sz,px);
+  const blob=new Blob([buf],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='initial_model_'+sz+'px_'+px.toFixed(2)+'A_rise'+rise_ang+'_twist'+twist_deg+(helicalHand>0?'R':'L')+'.mrc';
+  a.click();URL.revokeObjectURL(url);
+  setPg('v3d',100,'Done');btn.disabled=false;
+  setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);
 }
-function wMRC(data,nx,ny,nz,pixSz){const buf=new ArrayBuffer(1024+nx*ny*nz*4),dv=new DataView(buf);dv.setInt32(0,nx,true);dv.setInt32(4,ny,true);dv.setInt32(8,nz,true);dv.setInt32(12,2,true);dv.setInt32(28,nx,true);dv.setInt32(32,ny,true);dv.setInt32(36,nz,true);dv.setFloat32(40,nx*pixSz,true);dv.setFloat32(44,ny*pixSz,true);dv.setFloat32(48,nz*pixSz,true);dv.setFloat32(52,90,true);dv.setFloat32(56,90,true);dv.setFloat32(60,90,true);dv.setInt32(64,1,true);dv.setInt32(68,2,true);dv.setInt32(72,3,true);let mn=Infinity,mx=-Infinity,sm=0;for(let i=0;i<data.length;i++){mn=Math.min(mn,data[i]);mx=Math.max(mx,data[i]);sm+=data[i];}dv.setFloat32(76,mn,true);dv.setFloat32(80,mx,true);dv.setFloat32(84,sm/data.length,true);dv.setInt32(88,1,true);[77,65,80,32].forEach((c,i)=>dv.setUint8(208+i,c));dv.setUint8(212,0x44);dv.setUint8(213,0x44);new Float32Array(buf,1024).set(data);return buf;}
+
+function wMRC(data,nx,ny,nz,pixSz){
+  const buf=new ArrayBuffer(1024+nx*ny*nz*4),dv=new DataView(buf);
+  dv.setInt32(0,nx,true);dv.setInt32(4,ny,true);dv.setInt32(8,nz,true);
+  dv.setInt32(12,2,true);
+  dv.setInt32(28,nx,true);dv.setInt32(32,ny,true);dv.setInt32(36,nz,true);
+  dv.setFloat32(40,nx*pixSz,true);dv.setFloat32(44,ny*pixSz,true);dv.setFloat32(48,nz*pixSz,true);
+  dv.setFloat32(52,90,true);dv.setFloat32(56,90,true);dv.setFloat32(60,90,true);
+  dv.setInt32(64,1,true);dv.setInt32(68,2,true);dv.setInt32(72,3,true);
+  let mn=Infinity,mx=-Infinity,sm=0;
+  for(let i=0;i<data.length;i++){mn=Math.min(mn,data[i]);mx=Math.max(mx,data[i]);sm+=data[i];}
+  dv.setFloat32(76,mn,true);dv.setFloat32(80,mx,true);dv.setFloat32(84,sm/data.length,true);
+  dv.setInt32(88,1,true);
+  [77,65,80,32].forEach((c,i)=>dv.setUint8(208+i,c));
+  dv.setUint8(212,0x44);dv.setUint8(213,0x44);
+  new Float32Array(buf,1024).set(data);return buf;
+}
 
 // ═══════════════════════ SINOGRAM ROI LIVE ADJUST ═══════════════════════
 function xsSyncROIToPanel(){
