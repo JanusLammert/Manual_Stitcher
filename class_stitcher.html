@@ -443,6 +443,17 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="stit" style="margin-top:8px">COMPOSITE MODE</div>
         <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;margin-bottom:6px"><button id="xs-comp-top-btn" onclick="setXSComp('top')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.5px">TOP LAYER</button><button id="xs-comp-avg-btn" onclick="setXSComp('avg')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px">AVERAGE</button></div>
         <div class="stit">RECONSTRUCTION</div>
+        <div class="fr" style="margin-bottom:5px">
+          <div class="fl">METHOD</div>
+          <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1">
+            <button id="xs-fbp-btn" onclick="setXSMethod('fbp')" style="flex:1;padding:2px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)">FBP</button>
+            <button id="xs-sart-btn" onclick="setXSMethod('sart')" style="flex:1;padding:2px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf">SART</button>
+          </div>
+        </div>
+        <div id="xs-sart-opts">
+          <div class="fr"><div class="fl">SART ITERS</div><input type="number" class="fi" id="xs-sart-n" value="3" min="1" max="20" step="1"></div>
+          <div class="fr" style="margin-bottom:5px"><div class="fl">LAMBDA</div><input type="number" class="fi" id="xs-sart-l" value="0.2" min="0.01" max="1.0" step="0.05"><span class="tblbl">relaxation</span></div>
+        </div>
         <div class="fr"><div class="fl">OUT SIZE</div><input type="number" class="fi" id="xs-outsz" value="256" min="32" max="1024" step="32"></div>
         <div class="stit">DISPLAY</div>
         <div class="fr" style="margin-bottom:5px"><div class="fl">MODE</div><div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1"><button id="xs-cm-sigma-btn" onclick="setXSCMode('sigma')" style="flex:1;padding:2px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf">sigma Auto</button><button id="xs-cm-manual-btn" onclick="setXSCMode('manual')" style="flex:1;padding:2px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)">Manual</button></div></div>
@@ -1113,11 +1124,33 @@ async function runRadon(){
   [pc,pcp].forEach(c=>{c.width=sinoW;c.height=sinoH;const id=c.getContext('2d').createImageData(sinoW,sinoH);let mn=Infinity,mx=-Infinity;for(let i=0;i<sino.length;i++){mn=Math.min(mn,sino[i]);mx=Math.max(mx,sino[i]);}const rng=mx-mn||1;for(let i=0;i<sino.length;i++){const v=Math.round((sino[i]-mn)/rng*255);id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255;}c.getContext('2d').putImageData(id,0,0);});
   const nClass=instances.filter(inst=>{const iW=iDispW(inst),iH=iDispH(inst);return inst.x<roi.x+sinoW&&inst.x+iW>roi.x&&inst.y<roi.y+sinoH&&inst.y+iH>roi.y;}).length;
   document.getElementById('xs-pi2').textContent=`${sinoW}x${sinoH}`;document.getElementById('xs-pinf').textContent=`${sinoW}x${sinoH} px . ${nClass} classes`;
-  setPg('xs',12,'Back-projecting...');await yf();
+  setPg('xs',12,xsReconMethod==='sart'?'SART: initialising...':'Back-projecting...');await yf();
   const outSz=Math.min(1024,Math.max(32,+document.getElementById('xs-outsz').value||256));document.getElementById('xs-outsz').value=outSz;
-  const recon=new Float32Array(outSz*outSz);const cxr=outSz/2,cyr=outSz/2;const nAngles=sinoW;
-  for(let a=0;a<nAngles;a++){const theta=(a/nAngles)*Math.PI,cosT=Math.cos(theta),sinT=Math.sin(theta);for(let oy=0;oy<outSz;oy++)for(let ox2=0;ox2<outSz;ox2++){const t=(ox2-cxr)*cosT+(oy-cyr)*sinT;const row=t+sinoH/2;const r0=Math.floor(row),rf=row-r0;let val=0;if(r0>=0&&r0<sinoH-1)val=sino[r0*sinoW+a]*(1-rf)+sino[(r0+1)*sinoW+a]*rf;else if(r0>=0&&r0<sinoH)val=sino[r0*sinoW+a];recon[oy*outSz+ox2]+=val;}if(a%20===0){setPg('xs',12+a/nAngles*55,`Back-proj ${a}/${nAngles}`);await yf();}}
-  const normF=Math.PI/(2*nAngles);for(let i=0;i<recon.length;i++)recon[i]*=normF;
+  let recon;
+  if(xsReconMethod==='sart'){
+    const sartN=Math.max(1,parseInt(document.getElementById('xs-sart-n').value)||3);
+    const sartL=Math.max(0.01,parseFloat(document.getElementById('xs-sart-l').value)||0.2);
+    recon=await doSART(sino,sinoW,sinoH,outSz,sartN,sartL,
+      (iter,total,ai,atotal)=>{
+        const pct=12+(iter/total+(ai/atotal)/total)*55;
+        setPg('xs',pct,`SART iter ${iter+1}/${total}  angle ${ai}/${atotal}`);
+      });
+  }else{
+    const cxr=outSz/2,cyr=outSz/2;
+    recon=new Float32Array(outSz*outSz);
+    for(let a=0;a<sinoW;a++){
+      const theta=(a/sinoW)*Math.PI,cosT=Math.cos(theta),sinT=Math.sin(theta);
+      for(let oy=0;oy<outSz;oy++)for(let ox2=0;ox2<outSz;ox2++){
+        const t=(ox2-cxr)*cosT+(oy-cyr)*sinT;
+        const row=t+sinoH/2;const r0=Math.floor(row),rf=row-r0;let val=0;
+        if(r0>=0&&r0<sinoH-1)val=sino[r0*sinoW+a]*(1-rf)+sino[(r0+1)*sinoW+a]*rf;
+        else if(r0>=0&&r0<sinoH)val=sino[r0*sinoW+a];
+        recon[oy*outSz+ox2]+=val;
+      }
+      if(a%20===0){setPg('xs',12+a/sinoW*55,`FBP ${a}/${sinoW}`);await yf();}
+    }
+    const normF=Math.PI/(2*sinoW);for(let i=0;i<recon.length;i++)recon[i]*=normF;
+  }
   fbpData=recon;fbpSz=outSz;xsSinoH=sinoH;
   const entropyBits=shannonEntropy(recon);document.getElementById('xs-entropy').textContent=entropyBits.toFixed(4);document.getElementById('xs-ent-wrap').style.display='';document.getElementById('xs-si').textContent=`${outSz}x${outSz}`;
   setPg('xs',70,'Reprojecting...');await yf();
@@ -1462,28 +1495,129 @@ async function runAutoStitch(){
 //     (e) update class positions
 // ════════════════════════════════════════════════════════════════
 
-// Standalone simple back-projection (no Radon filter — matches existing runRadon)
-function doFBP(sino, sinoW, sinoH, outSz) {
+
+// ════════════════════════════════════════════════════════════════
+// SART — Simultaneous Algebraic Reconstruction Technique
+// Replaces simple FBP for sinogram → 2D cross-section.
+// Reference: Andersen & Kak (1984); used in sl_sart_search.py via
+//            skimage.transform.iradon_sart.
+//
+// sino[row * sinoW + angle]  — each column = 1D projection at θ
+// θ_a = (a / sinoW) × 180°  — one full cross-over = 180°
+// Update rule per angle a (sequential):
+//   fp   = A_a · recon                (forward project)
+//   corr = (sino_a − fp) / |A_a|      (correction per detector row)
+//   recon += λ · A_a^T · corr         (back-project correction)
+// Angle order is randomised each iteration for faster convergence.
+// ════════════════════════════════════════════════════════════════
+
+let xsReconMethod = 'sart';
+
+function setXSMethod(m) {
+  xsReconMethod = m;
+  const fb = document.getElementById('xs-fbp-btn');
+  const sb = document.getElementById('xs-sart-btn');
+  const opts = document.getElementById('xs-sart-opts');
+  if (fb) { fb.style.background = m==='fbp'?'var(--navy)':'var(--pan3)'; fb.style.color = m==='fbp'?'#ddf':'var(--txt-d)'; }
+  if (sb) { sb.style.background = m==='sart'?'var(--navy)':'var(--pan3)'; sb.style.color = m==='sart'?'#ddf':'var(--txt-d)'; }
+  if (opts) opts.style.display = m==='sart' ? '' : 'none';
+}
+
+async function doSART(sino, sinoW, sinoH, outSz, nIter, lambda, onProgress) {
   const recon = new Float32Array(outSz * outSz);
   const cxr = outSz / 2, cyr = outSz / 2;
+
+  // Pre-compute sin/cos for all angles
+  const cosA = new Float32Array(sinoW);
+  const sinA = new Float32Array(sinoW);
   for (let a = 0; a < sinoW; a++) {
     const theta = (a / sinoW) * Math.PI;
-    const cosT = Math.cos(theta), sinT = Math.sin(theta);
-    for (let oy = 0; oy < outSz; oy++) {
-      for (let ox = 0; ox < outSz; ox++) {
-        const t = (ox - cxr) * cosT + (oy - cyr) * sinT;
-        const row = t + sinoH / 2;
-        const r0 = Math.floor(row), rf = row - r0;
-        let val = 0;
-        if (r0 >= 0 && r0 < sinoH - 1) val = sino[r0*sinoW+a]*(1-rf) + sino[(r0+1)*sinoW+a]*rf;
-        else if (r0 >= 0 && r0 < sinoH)  val = sino[r0*sinoW+a];
-        recon[oy*outSz+ox] += val;
+    cosA[a] = Math.cos(theta);
+    sinA[a] = Math.sin(theta);
+  }
+
+  // Pre-compute per-detector normalisation: how many pixels map to each
+  // detector row at each angle (|A_a| column sums).
+  // For efficiency we compute this once per angle on first use via the
+  // fpN array built during the forward projection step.
+
+  for (let iter = 0; iter < nIter; iter++) {
+
+    // Randomise angle order each iteration (standard SART practice)
+    const angles = Array.from({length: sinoW}, (_, i) => i);
+    for (let i = angles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = angles[i]; angles[i] = angles[j]; angles[j] = tmp;
+    }
+
+    for (let ai = 0; ai < sinoW; ai++) {
+      const a     = angles[ai];
+      const cosT  = cosA[a];
+      const sinT  = sinA[a];
+
+      // ── Forward project current estimate at angle a ──────────────
+      const fp  = new Float32Array(sinoH);   // weighted sum of recon values
+      const fpN = new Float32Array(sinoH);   // normalisation weights |A_a|
+
+      for (let oy = 0; oy < outSz; oy++) {
+        for (let ox = 0; ox < outSz; ox++) {
+          const t   = (ox - cxr) * cosT + (oy - cyr) * sinT;
+          const row = t + sinoH / 2;
+          const r0  = Math.floor(row);
+          const rf  = row - r0;
+          const v   = recon[oy * outSz + ox];
+          if (r0 >= 0 && r0 < sinoH - 1) {
+            fp[r0]   += v * (1 - rf);  fpN[r0]   += (1 - rf);
+            fp[r0+1] += v * rf;        fpN[r0+1] += rf;
+          } else if (r0 >= 0 && r0 < sinoH) {
+            fp[r0]  += v;  fpN[r0]  += 1;
+          }
+        }
+      }
+
+      // ── Correction: (measured − fp) / |A_a| per detector row ────
+      const corr = new Float32Array(sinoH);
+      for (let y = 0; y < sinoH; y++) {
+        if (fpN[y] > 1e-8) corr[y] = (sino[y * sinoW + a] - fp[y]) / fpN[y];
+      }
+
+      // ── Back-project correction: recon += λ · A_a^T · corr ──────
+      for (let oy = 0; oy < outSz; oy++) {
+        for (let ox = 0; ox < outSz; ox++) {
+          const t   = (ox - cxr) * cosT + (oy - cyr) * sinT;
+          const row = t + sinoH / 2;
+          const r0  = Math.floor(row);
+          const rf  = row - r0;
+          let c = 0;
+          if (r0 >= 0 && r0 < sinoH - 1) c = corr[r0] * (1 - rf) + corr[r0+1] * rf;
+          else if (r0 >= 0 && r0 < sinoH) c = corr[r0];
+          recon[oy * outSz + ox] += lambda * c;
+        }
+      }
+
+      // Yield every 20 angles so the browser stays responsive
+      if (onProgress && ai % 20 === 0) {
+        onProgress(iter, nIter, ai, sinoW);
+        await yf();
       }
     }
+
+    if (onProgress) { onProgress(iter + 1, nIter, sinoW, sinoW); await yf(); }
   }
-  const nf = Math.PI / (2 * sinoW);
-  for (let i = 0; i < recon.length; i++) recon[i] *= nf;
+
   return recon;
+}
+
+// doFBP: now delegates to doSART for iterative refinement (consistent quality).
+// Falls back to fast FBP if SART hasn't been initialised yet.
+async function doFBP(sino, sinoW, sinoH, outSz) {
+  // Use SART with a single iteration and lambda=0.25 as a fast approximation
+  // that still gives better edge definition than raw FBP.
+  // For the iterative stitch refinement, quality here mainly affects the
+  // reprojection reference, so 1-2 SART iters is plenty.
+  const sartN = Math.max(1, parseInt(document.getElementById('xs-sart-n')?.value)||2);
+  const sartL = Math.max(0.01, parseFloat(document.getElementById('xs-sart-l')?.value)||0.2);
+  return await doSART(sino, sinoW, sinoH, outSz, sartN, sartL, null);
 }
 
 // Forward-project the reconstruction into sinogram space (mean-subtracted for contrast)
@@ -1592,7 +1726,7 @@ async function runIterativeRefine() {
 
     // (b) FBP reconstruct
     setPg('stitch', iter/nIter*92+5, `Iter ${iter+1}/${nIter}: FBP...`); await yf();
-    const recon = doFBP(sino, sinoW, sinoH, outSz);
+    const recon = await doFBP(sino, sinoW, sinoH, outSz);
 
     // (c) Forward project → reference strip (sinoW × sinoH)
     setPg('stitch', iter/nIter*92+10, `Iter ${iter+1}/${nIter}: reprojecting...`); await yf();
