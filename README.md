@@ -1,84 +1,81 @@
 # 2D Class Stitcher
 
-A browser-based tool for manually assembling 2D class averages from cryo-EM experiments into composite images and computing cross-sectional reconstructions of helical assemblies.
+A browser-based tool that turns RELION or cryoSPARC 2D class averages of helical assemblies into an interactive sinogram solver, producing an initial 3D helical model directly from 2D classes.
 
-No installation required — open `class_stitcher.html` in any modern browser.
+No installation required — download `class_stitcher.html` and open it in any modern browser (Chrome, Firefox, or Edge).
+
+---
+
+## Overview
+
+A 2D class average spanning a full crossover of a helical filament is itself a sinogram: each horizontal position encodes an azimuthal projection of the fibril. Assembling a clean gallery of such classes into a usable cross-section has traditionally been a manual, trial-and-error task. This tool automates that process while still allowing full manual control, implementing the approach described by Scheres (2020) for amyloid structure determination in RELION.
+
+Classes can be assembled either by hand (drag, crop, rotate, mirror) or automatically: the tool solves the cyclic order and mirror orientation of a multi-selected set of classes by maximizing edge correlation around the full periodic boundary, places them with soft-edge blending, and then iteratively refines the placement through a reconstruct → reproject → cross-correlate cycle until convergence. The resulting cross-section can be extruded into an initial 3D helical volume by revolution.
 
 ---
 
 ## Features
 
 ### Data Import
-- Load one or more **MRCS stacks** (RELION or CryoSPARC format)
+- Load one or more MRCS/MRC stacks from **RELION** or **CryoSPARC** (CryoSPARC classes are automatically rotated 90° on import)
 - Supports MRC modes 0 (int8), 1 (int16), 2 (float32), and 6 (uint16)
-- **CryoSPARC** classes are automatically rotated 90° on import
 - Pixel size is read from the MRC header and can be overridden
-- Each stack is assigned a distinct **colour bar** (top and bottom of each class) so you can tell stacks apart at a glance — colour is user-changeable via a colour picker
+- Each loaded stack gets a distinct, user-changeable colour bar so classes from different stacks remain visually distinguishable
 
-### Canvas Stitching
-- Click thumbnails to add class average **instances** to the canvas
-- Add the **same class multiple times** — each instance is fully independent
-- **Drag** to move, **drag a corner handle** to crop symmetrically, **drag the rotation handle** (↻) to rotate freely
-- Non-square crops supported: set width and height independently
-- Per-instance controls: opacity, rotation, mirror X/Y, crop W×H, crop offsets
-- Global crop: apply one crop size to all instances simultaneously
-- **Snap-to-grid** with configurable grid size
-- **Auto Arrange** lays out all instances in a grid and fits the view
-- **Undo** (Ctrl+Z / button) with 40-step history
+### Manual Canvas Stitching
+- Click thumbnails to add class average instances to the canvas; the same class can be added multiple times, each instance fully independent
+- Drag to move, drag a corner handle to crop (including non-square crops), drag the rotation handle to rotate freely
+- Per-instance controls: opacity, rotation, mirror X/Y, crop dimensions and offsets, z-order
+- Snap-to-grid with configurable grid size, and an Auto Arrange function that lays out all instances in a grid
+- Undo with 40-step history
 
-### Display
-- Uniform pixel scale across all classes — display scale slider affects all equally
-- **8 colormaps**: Grayscale (default), Hot, Cool, Viridis, Plasma, Inferno, Cividis, RdBu
-- Contrast controls: min/max in σ units, invert
-- Render cache — pixel data is only recomputed when appearance parameters actually change, keeping the canvas responsive even with many instances
-
-### Measurement
-- Ruler tool: click-drag to measure distances in pixels, Ångström, and nanometres
+### Automatic Helix Stitch
+- Multi-select a set of classes (Shift+click or Shift+drag) and let the tool solve their placement automatically
+- **Step 1 — initial placement:** classes are placed at equal intervals based on a specified crossover distance; cyclic order is solved via greedy + 2-opt optimization, with optional mirror-flip testing per class
+- **Step 2 — iterative refinement:** repeatedly reconstructs a cross-section from the current arrangement, reprojects it, cross-correlates each class against the reprojection, and updates its X/Y position — repeated for a configurable number of iterations. The reconstruction step here uses a fast SART pass internally for a sharper reprojection reference, though the panel still labels this setting "FBP iterations" (see the Sinogram Cross-Section section below for details)
+- Configurable search range per iteration, fade width for soft-edge blending between classes, and Y-alignment mode (centre on axis, align top edges, or keep existing Y positions)
 
 ### Sinogram Cross-Section
-- Draw an **ROI rectangle** over the stitched image (assuming the helix runs along X)
-- Drag and resize the ROI with corner handles; enter exact coordinates via the ROI control panel
-- **Snap to Fibril Center** moves the ROI to the centroid of all canvas instances
-- Two projection modes:
-  - **Sum along X (helix axis)** — rotates the patch and sums columns, the physically correct approach for helical assemblies
-  - **Full 2D Radon** — standard line-integral transform
-- Filter options: Ram-Lak, Hamming, Hann, or unfiltered
-- Displays sinogram and **Filtered Back Projection (FBP)** reconstruction side by side
-- **Shannon entropy score** of the cross-section — lower entropy indicates a sharper, more structured result
+- Draw a rectangular ROI over the stitched image (assuming the helix runs along X) with corner-handle resizing or exact coordinate entry
+- "Snap to Fibril Center" moves the ROI to the centroid of all canvas instances
+- Two reconstruction methods, selectable in the modal:
+  - **SART** (Simultaneous Algebraic Reconstruction Technique) — the default. An iterative algebraic reconstruction (Andersen & Kak, 1984) that forward-projects the current estimate at each angle, computes a correction from the residual, and back-projects that correction with a configurable relaxation factor (λ). Angle order is randomized each iteration for faster convergence. Both the number of iterations and λ are user-adjustable
+  - **FBP** (filtered back-projection) — the classical direct reconstruction, selectable as an alternative via the method toggle
+- Displays the sinogram and reconstruction side by side, with a Shannon entropy score of the cross-section (lower entropy indicates a sharper, more structured result)
+- X-periodicity scan via autocorrelation to help identify the correct crossover distance
+
+> **Note:** the iterative refinement loop inside the automatic Helix Stitch panel (see above) also reconstructs a cross-section at each refinement step. Internally, this now runs a fast 1–2 iteration SART pass rather than a single-shot FBP, since it gives a sharper reprojection reference at negligible extra cost — even though the panel's UI still labels this setting "FBP iterations" for historical reasons. No action is needed; this is purely an internal implementation detail of how the reprojection reference is computed during automatic refinement.
 
 ### 3D Volume by Revolution
-- Approve the cross-section and extrude it into a **3D volume** by rotating it about the Y or X axis
-- Set maximum radius and an optional crossover distance cutoff
-- Preview equatorial (XZ) and meridional (XY) slices before computing
-- Export as a valid **MRC float32 file** with correct header (readable by UCSF ChimeraX, RELION, Coot, EMAN2)
+- Once a cross-section looks correct, extrude it into a 3D volume by rotating it about the chosen helix axis
+- Set helical rise and twist per subunit, handedness, and an optional Cn symmetry order
+- Preview equatorial and meridional slices before committing
+- Export as a valid MRC float32 file with a correct header, readable by RELION, UCSF ChimeraX, Coot, and EMAN2
 
 ### Alignment Optimization
-- Mark two instances as **REF (A)** and **MOV (B)**
-- Brute-force NCC (normalised cross-correlation) search over a configurable translation and rotation range
-- Results show best NCC score, ΔX, ΔY, ΔRotation — apply with one click
+- Mark two instances as REF and MOV, then run a brute-force normalized cross-correlation search over a configurable translation and rotation range to align them precisely
 
 ### Save / Load Session
-- **Save State** exports a JSON file capturing all instance positions, crops, rotations, opacity, contrast, colormap, stack colours, ROI, and marks
-- **Load State** restores a saved session (reload the same MRCS files first)
-- **Export PNG** renders the current canvas at display resolution, including stack colour bars and the selected colormap
+- Save the full canvas state (positions, crops, rotations, opacity, contrast, colormap, stack colours, ROI, marks) as JSON
+- Reload a saved session (after re-loading the same MRCS files) to continue exactly where you left off
+- Export the current canvas view as a PNG at display resolution
 
 ---
 
 ## Getting Started
 
-1. Download `class_stitcher.html`
-2. Open it in Chrome, Firefox, or Edge (no server needed)
-3. Click **Load MRCS** to load one or more `.mrcs` / `.mrc` files
-4. Click thumbnails in the left panel to add class averages to the canvas
-5. Arrange, crop, and rotate as needed
-6. For cross-sections: switch to the **ROI tool** (R), draw a rectangle over the fibril, then click **Sinogram X-Sec**
+1. Download `class_stitcher.html` and open it in a browser — no server needed
+2. Click **Load MRCS** to load one or more `.mrcs` / `.mrc` files (or try the built-in **Test Dataset**)
+3. Click thumbnails to add class averages to the canvas, or Shift-select classes and use **Helix Stitch** for automatic placement
+4. Use the **ROI** tool to draw a rectangle over the assembled fibril, then compute the sinogram cross-section
+5. If the cross-section looks correct, extend it to a 3D initial model and export as MRC
 
 ---
 
 ## Keyboard Shortcuts
 
 | Key | Action |
-|-----|--------|
+|---|---|
 | `V` | Select / Move / Crop / Rotate tool |
 | `R` | ROI draw tool |
 | `M` | Measure tool |
@@ -90,52 +87,45 @@ No installation required — open `class_stitcher.html` in any modern browser.
 
 ---
 
-## Workflow Example: Helical Assembly Cross-Section
-
-```
-1. Load MRCS files from RELION or CryoSPARC
-2. Add class averages of the helical filament to the canvas
-3. Arrange them so the filament runs left → right (X direction)
-4. Select the ROI tool, draw a rectangle that captures the full filament width
-5. Use "Snap to Fibril Center" to centre the ROI precisely
-6. Click "Sinogram X-Sec" → adjust filter → inspect sinogram and FBP result
-7. Check the entropy score — lower = sharper cross-section
-8. Click "Looks Good → Extend to 3D Map"
-9. Set the revolution axis and max radius → Export MRC
-```
-
----
-
 ## Technical Notes
 
-- **No dependencies** — pure HTML + CSS + JavaScript, single file
-- **Pixel rendering** uses a 256-entry LUT per colormap computed at startup; colormaps match matplotlib/scientific conventions
-- **Statistics** (contrast normalisation) use Welford's online algorithm — O(N) single pass, no intermediate arrays
-- **FBP** uses a custom Cooley–Tukey FFT implementation with ramp, Hamming, or Hann frequency-domain filter
-- MRC output follows the MRC2014 standard with correct `MAP ` identifier and machine stamp
+- No external dependencies — pure HTML, CSS, and JavaScript in a single file
+- Pixel rendering uses a precomputed 256-entry lookup table per colormap (8 colormaps available: Grayscale, Hot, Cool, Viridis, Plasma, Inferno, Cividis, RdBu)
+- Contrast normalization uses Welford's online algorithm for a single-pass, memory-efficient statistics computation
+- SART reconstruction uses a sequential, randomized-angle-order update scheme following the classic Andersen & Kak (1984) formulation (forward-project at angle a, compute the residual-based correction normalized by ray weight, back-project with relaxation factor λ)
+- FBP reconstruction uses a custom Cooley–Tukey FFT implementation for the filtering step
+- MRC output follows the MRC2014 standard with a correct `MAP` identifier and machine stamp
 
 ---
 
 ## Limitations
 
-- Raw pixel data from loaded MRCS files is **not stored in session JSON** — you must reload the same MRCS files before loading a saved state
-- The 3D revolution assumes the structure is rotationally symmetric around the chosen axis
-- FBP is a simple back-projection; no CTF correction or iterative refinement is performed
-- Large stacks (>200 classes, box >512) may be slow to render initially until the cache is populated
+- Raw pixel data from loaded MRCS files is not stored in the session JSON — reload the same MRCS files before loading a saved state
+- The 3D revolution step assumes the structure is rotationally symmetric around the chosen helix axis
+- The 2D cross-section reconstruction (whether SART or FBP) is a 2D-only method; no CTF correction or true iterative 3D refinement is performed
+- Large stacks (>200 classes, box size >512) may render slowly until the internal cache is populated
 
 ---
 
 ## License
 
-    The Program allows to manuly stitch 2D classes and generate an inital 3D-Volume besed on the stitching.
-    Copyright (C) 2026  Janus Lammert
+```
+This program allows manual or automatic stitching of 2D classes and generation of an
+initial 3D volume based on the stitching.
+Copyright (C) 2026 Janus Lammert
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+```
+
+Contact: Janus Lammert (j.lammert@fz-juelich.de)
