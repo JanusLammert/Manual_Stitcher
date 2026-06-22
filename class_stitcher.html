@@ -1136,6 +1136,8 @@ async function runRadon(){
         setPg('xs',pct,`SART iter ${iter+1}/${total}  angle ${ai}/${atotal}`);
       });
   }else{
+    setPg('xs',10,'Ramp-filtering sinogram...');await yf();
+    const sinoF=rampFilterSinogram(sino,sinoW,sinoH,true);
     const cxr=outSz/2,cyr=outSz/2;
     recon=new Float32Array(outSz*outSz);
     for(let a=0;a<sinoW;a++){
@@ -1143,8 +1145,8 @@ async function runRadon(){
       for(let oy=0;oy<outSz;oy++)for(let ox2=0;ox2<outSz;ox2++){
         const t=(ox2-cxr)*cosT+(oy-cyr)*sinT;
         const row=t+sinoH/2;const r0=Math.floor(row),rf=row-r0;let val=0;
-        if(r0>=0&&r0<sinoH-1)val=sino[r0*sinoW+a]*(1-rf)+sino[(r0+1)*sinoW+a]*rf;
-        else if(r0>=0&&r0<sinoH)val=sino[r0*sinoW+a];
+        if(r0>=0&&r0<sinoH-1)val=sinoF[r0*sinoW+a]*(1-rf)+sinoF[(r0+1)*sinoW+a]*rf;
+        else if(r0>=0&&r0<sinoH)val=sinoF[r0*sinoW+a];
         recon[oy*outSz+ox2]+=val;
       }
       if(a%20===0){setPg('xs',12+a/sinoW*55,`FBP ${a}/${sinoW}`);await yf();}
@@ -1176,6 +1178,38 @@ function xsAutoManual(){if(!fbpData)return;let mn=Infinity,mx=-Infinity;for(let 
 function setXSCMode(m){xsCMode=m;document.getElementById('xs-cm-sigma-btn').style.background=m==='sigma'?'var(--navy)':'var(--pan3)';document.getElementById('xs-cm-sigma-btn').style.color=m==='sigma'?'#ddf':'var(--txt-d)';document.getElementById('xs-cm-manual-btn').style.background=m==='manual'?'var(--navy)':'var(--pan3)';document.getElementById('xs-cm-manual-btn').style.color=m==='manual'?'#ddf':'var(--txt-d)';document.getElementById('xs-cmode-sigma').style.display=m==='sigma'?'':'none';document.getElementById('xs-cmode-manual').style.display=m==='manual'?'':'none';renderXS();}
 function fft(re,im,inv){const n=re.length;for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}for(let len=2;len<=n;len<<=1){const a=2*Math.PI/len*(inv?-1:1),wr=Math.cos(a),wi=Math.sin(a);for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let j=0;j<len/2;j++){const ur=re[i+j],ui=im[i+j],vr=re[i+j+len/2]*cr-im[i+j+len/2]*ci,vi=re[i+j+len/2]*ci+im[i+j+len/2]*cr;re[i+j]=ur+vr;im[i+j]=ui+vi;re[i+j+len/2]=ur-vr;im[i+j+len/2]=ui-vi;const nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr;}}}if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}}
 function nextP2(n){let p=1;while(p<n)p<<=1;return p;}
+function rampFilterSinogram(sino, sinoW, sinoH, hamming=false) {
+  const n = nextP2(sinoH) * 2; // zero-pad to avoid circular-convolution wraparound
+  const filtered = new Float32Array(sinoW * sinoH);
+  const ramp = new Float32Array(n);
+  for (let k = 0; k < n; k++) {
+    const freq = k <= n/2 ? k/n : (k-n)/n; // signed frequency in [-0.5, 0.5)
+    let w = 2 * Math.abs(freq); // Ram-Lak response
+    if (hamming) {
+      // Window the filter symmetrically about DC, full strength (1.0) at DC
+      // tapering to the Hamming minimum (0.08) at Nyquist - this is what
+      // suppresses high-frequency noise amplification. (An earlier version
+      // of this had the taper direction backwards, which would have
+      // amplified noise instead of suppressing it - verified numerically
+      // before shipping: window(0)=1.0, window(Nyquist)=0.08, symmetric for
+      // mirrored negative frequencies.)
+      const kc = k <= n/2 ? k : n - k; // distance from DC in bins, 0..n/2
+      w *= (0.54 + 0.46*Math.cos(Math.PI*kc/(n/2)));
+    }
+    ramp[k] = w;
+  }
+  const re = new Float32Array(n), im = new Float32Array(n);
+  for (let a = 0; a < sinoW; a++) {
+    re.fill(0); im.fill(0);
+    for (let y = 0; y < sinoH; y++) re[y] = sino[y*sinoW + a];
+    fft(re, im, false);
+    for (let k = 0; k < n; k++) { re[k] *= ramp[k]; im[k] *= ramp[k]; }
+    fft(re, im, true);
+    for (let y = 0; y < sinoH; y++) filtered[y*sinoW + a] = re[y];
+  }
+  return filtered;
+}
+
 function drawXSViewport(){const src=document.getElementById('xs-rc');const vp=document.getElementById('xs-vp');const wrap=document.getElementById('xs-vp-wrap');if(!wrap)return;vp.width=wrap.clientWidth;vp.height=wrap.clientHeight;const ctx=vp.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,vp.width,vp.height);ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(src,xsVpX,xsVpY,src.width*xsVpZ,src.height*xsVpZ);ctx.restore();ctx.fillStyle='rgba(219,157,71,.7)';ctx.font='10px "IBM Plex Mono"';ctx.fillText(`${Math.round(xsVpZ*100)}%`,6,16);}
 function xsZoomReset(){const src=document.getElementById('xs-rc');const wrap=document.getElementById('xs-vp-wrap');if(!src.width||!wrap)return;xsVpZ=Math.min(wrap.clientWidth/src.width,wrap.clientHeight/src.height);xsVpX=(wrap.clientWidth-src.width*xsVpZ)/2;xsVpY=(wrap.clientHeight-src.height*xsVpZ)/2;drawXSViewport();}
 function xsZoom(factor){const wrap=document.getElementById('xs-vp-wrap');const cx=wrap.clientWidth/2,cy=wrap.clientHeight/2;const wx=(cx-xsVpX)/xsVpZ,wy=(cy-xsVpY)/xsVpZ;xsVpZ=Math.max(0.1,Math.min(20,xsVpZ*factor));xsVpX=cx-wx*xsVpZ;xsVpY=cy-wy*xsVpZ;drawXSViewport();}
