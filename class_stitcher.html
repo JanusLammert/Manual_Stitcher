@@ -110,6 +110,9 @@ input[type=checkbox]{accent-color:var(--gold);}
 .chep-name-inp::placeholder{color:var(--txt-d);}
 .stack-meta{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txt-d);letter-spacing:.5px;}
 .stack-del{cursor:pointer;color:var(--txt-d);font-size:11px;padding:1px 3px;border-radius:2px;}.stack-del:hover{color:#f99;}
+.stack-star{cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.3px;color:var(--txt-d);padding:2px 4px;border-radius:2px;white-space:nowrap;flex-shrink:0;}
+.stack-star:hover{color:var(--txt);background:var(--pan2);}
+.stack-star.linked{color:var(--gold);}
 .grp-item{cursor:pointer;}.grp-item .stack-info{cursor:pointer;}
 .grp-item.grp-active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;}
 .grp-actions{display:flex;gap:4px;margin-top:3px;}
@@ -259,6 +262,8 @@ input[type=checkbox]{accent-color:var(--gold);}
       <div class="ph" onclick="tsec('sstacks')"><div class="ph-t">STACKS <span id="stk-cnt" style="color:var(--gold)">(0)</span></div><div class="chev o" id="chev-sstacks">&#9662;</div></div>
       <div class="pb" id="sstacks">
         <div id="stacks-list"><div id="no-stacks" style="color:var(--txt-d);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px;letter-spacing:.5px">No stacks loaded.</div></div>
+        <input type="file" id="stack-star-input" accept=".star,.cs" style="display:none">
+        <div style="color:var(--txt-d);font-family:'IBM Plex Mono',monospace;font-size:8px;padding:3px 2px 0;letter-spacing:.3px">Click a stack's STAR badge to link a RELION particles.star or CryoSPARC .cs file - CHEP, Polarity and Crossover(coords) then pick it up automatically.</div>
       </div>
     </div>
     <!-- CHEP -->
@@ -268,9 +273,9 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="chev o" id="chev-schep">&#9662;</div>
       </div>
       <div class="pb" id="schep">
-        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-chep-star').click()">Load particles .star</button></div>
-        <input type="file" id="fi-chep-star" accept=".star" style="display:none">
-        <div class="fr" id="chep-target-row" style="display:none"><div class="fl">STACK</div><select class="fs" id="chep-target-stack" onchange="chep.targetStackId=+this.value;updChepStatus();document.getElementById('chep-run-btn').disabled=!(chep.filId&&chep.targetStackId);"></select></div>
+        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-chep-star').click()" title="RELION particles.star, or a CryoSPARC particles .cs file">Load particles .star/.cs</button></div>
+        <input type="file" id="fi-chep-star" accept=".star,.cs" style="display:none">
+        <div class="fr" id="chep-target-row" style="display:none"><div class="fl">STACK</div><select class="fs" id="chep-target-stack" onchange="chepSetTarget(+this.value)"></select></div>
         <div id="chep-status" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);line-height:1.6;margin-bottom:7px">No STAR loaded.</div>
         <div class="fr" title="Which space the weighted k-means clusters. 'By Fibrils' is the published CHEP method (rows=filaments) - it gives you real filament clusters, a purity score per class, and cluster STAR export. 'By Classes' transposes the same math (rows=classes) as a quicker alternative view - no filament clusters, no purity, export disabled."><div class="fl">MODE</div><div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1"><button id="chep-mode-cls-btn" onclick="setChepMode('classes')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.3px" title="Cluster in CLASS space: rows=classes, features=filaments. Quick alternative view - no purity score, no filament-cluster STAR export.">By Classes</button><button id="chep-mode-fil-btn" onclick="setChepMode('fibrils')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.3px" title="Cluster in FIBRIL space: rows=filaments, features=classes (the published CHEP method). Gives purity scores and lets you export one particle STAR per filament cluster.">By Fibrils</button></div></div>
         <div class="fr" title="Number of polymorph clusters to split the filaments (or classes) into. Try a few values and use 'Show Diagnostics' below (PCA scatter + elbow curve) to judge whether K is too low (distinct groups merged) or too high (one real group split in two)."><div class="fl">K</div><input type="number" class="fism" id="chep-k" value="2" min="2" step="1"><span class="tblbl">clusters</span></div>
@@ -306,9 +311,9 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="chev o" id="chev-spol">&#9662;</div>
       </div>
       <div class="pb col" id="spol">
-        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-pol-star').click()">Load particles .star</button></div>
-        <input type="file" id="fi-pol-star" accept=".star" style="display:none">
-        <div class="fr" id="pol-target-row" style="display:none"><div class="fl">STACK</div><select class="fs" id="pol-target-stack" onchange="pol.targetStackId=+this.value;updPolStatus();document.getElementById('pol-run-btn').disabled=!(pol.presentClasses&&pol.targetStackId);"></select></div>
+        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-pol-star').click()" title="RELION particles.star, or a CryoSPARC particles .cs file">Load particles .star/.cs</button></div>
+        <input type="file" id="fi-pol-star" accept=".star,.cs" style="display:none">
+        <div class="fr" id="pol-target-row" style="display:none"><div class="fl">STACK</div><select class="fs" id="pol-target-stack" onchange="polSetTarget(+this.value)"></select></div>
         <div id="pol-status" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);line-height:1.6;margin-bottom:7px">No STAR loaded.</div>
         <div class="fr" title="Minimum number of filaments a pair of classes must both appear in before a polarity relationship is computed between them. Pairs sharing fewer filaments than this get zero weight (too little data to trust) - raise if the result looks noisy/unstable, lower if too few class pairs end up connected."><div class="fl">MIN SHARE</div><input type="number" class="fism" id="pol-minshare" value="3" min="1" step="1"><span class="tblbl">filaments/pair</span></div>
         <div class="fr" title="Number of random restarts for the greedy flip optimizer (maximizes the Ising-style objective F(x)=0.5·xᵀPx over all ±1 flip assignments). More restarts reduce the chance of landing in a bad local optimum, at the cost of longer computation."><div class="fl">RESTARTS</div><input type="number" class="fism" id="pol-restarts" value="100" min="1" step="1"><span class="tblbl">optimizer seeds</span></div>
@@ -360,10 +365,16 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="fr" title="Computed, not editable: the pixel offset between consecutive classes' left edges, derived from C/O DIST, the number of selected classes, and their average width - filled in after 'Place Classes'."><div class="fl">STEP</div><span id="stitch-step-lbl" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gold);flex:1">-- px / class</span></div>
         <div class="fr" style="margin-bottom:5px" title="Computed, not editable: how much adjacent classes' borders overlap (or, if negative, gap) given the STEP above and average class width - this is the region the soft cosine taper (FADE %) blends across."><div class="fl">OVERLAP</div><span id="stitch-ovlp-lbl" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d);flex:1">-- px per border</span></div>
         <div class="fr" style="margin-bottom:5px"><div class="fl" title="How overlapping class averages are combined when the sinogram/cross-section is assembled">WEIGHTING</div><div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1">
-          <button id="ow-equal-btn" onclick="setOverlapMode('equal')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf" title="Overlapping classes contribute equally (soft-edge average)">Equal</button>
+          <button id="ow-equal-btn" onclick="setOverlapMode('equal')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf" title="Overlapping classes are blended into a weighted average (see the factors below)">Equal</button>
           <button id="ow-top-btn" onclick="setOverlapMode('top')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)" title="Only the front-most (top) class shows in an overlap (soft-edge over-composite)">Top</button>
-          <button id="ow-count-btn" onclick="setOverlapMode('count')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)" title="Weighted average by each class's particle count (needs a CHEP particle STAR; falls back to Equal)">Count</button>
+          <button id="ow-max-btn" onclick="setOverlapMode('max')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)" title="At every overlapping pixel, keep whichever class has the highest raw value there - no blending, no weighting">Max</button>
         </div></div>
+        <div class="fr" style="margin-bottom:5px;flex-wrap:wrap;row-gap:4px">
+          <div class="fl" title="Weight factors applied when WEIGHTING is Equal - either, both, or neither can be on">FACTORS</div>
+          <label id="ow-count-lbl" style="display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);cursor:pointer" title="Scale each class's contribution by its particle count (needs a CHEP particle STAR; classes averaged from more particles count for more)"><input type="checkbox" id="ow-count-ck" onchange="toggleOverlapCount(this.checked)" style="accent-color:var(--gold)">particles</label>
+          <label id="ow-dist-lbl" style="display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);cursor:pointer" title="Scale each class's contribution by distance from that class's own box center - the middle of each class average is trusted more than its periphery"><input type="checkbox" id="ow-dist-ck" onchange="toggleOverlapDist(this.checked)" style="accent-color:var(--gold)">dist. from center</label>
+          <input type="number" id="ow-distpow" value="1" min="0.1" max="8" step="0.1" oninput="setOverlapDistPow(this.value)" title="Falloff sharpness for the distance weight: 1 = linear, higher = concentrated near the box center, lower = gentler/broader" style="width:38px;background:var(--pan3);border:1px solid var(--bdr);border-radius:3px;padding:2px 4px;color:var(--txt);font-family:'IBM Plex Mono',monospace;font-size:9px;outline:none">
+        </div>
         <div class="adv-h" onclick="togAdv('adv-stitch')"><div class="chev" id="chev-adv-stitch">&#9654;</div><div class="adv-hl">Algorithm Options</div></div>
         <div class="adv-b" id="adv-stitch">
           <div class="fr" style="margin-top:5px" title="Finds a better cyclic order for the selected classes by cross-correlating each class's left/right edge strips against every other class's, then greedy nearest-neighbor + 2-opt search for the ordering that maximizes total adjacent-edge similarity. Off = keep whatever order the classes are currently in (e.g. class number)."><label class="fl">OPT ORD</label><input type="checkbox" id="stitch-opt" checked style="accent-color:var(--grn)"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);margin-left:5px">Greedy+2-opt cyclic order (initial)</span></div>
@@ -410,8 +421,8 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="chev o" id="chev-sxo">&#9662;</div>
       </div>
       <div class="pb col" id="sxo">
-        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-xo-star').click()">Load particles .star</button></div>
-        <input type="file" id="fi-xo-star" accept=".star" style="display:none">
+        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-xo-star').click()" title="RELION particles.star, or a CryoSPARC particles .cs file">Load particles .star/.cs</button></div>
+        <input type="file" id="fi-xo-star" accept=".star,.cs" style="display:none">
         <div id="xo-status" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);line-height:1.6;margin-bottom:7px">No STAR loaded.</div>
         <div class="fr" title="Pixel size (Å/px) of the MICROGRAPH the particle coordinates were picked in - NOT the box/extraction pixel size (rlnImagePixelSize), which is often different (binned). Coordinates are in micrograph pixels, so this is what converts the picked pairwise distances into Angstrom. Getting this wrong scales the crossover estimate by the same wrong factor."><div class="fl">MIC PX</div><input type="number" class="fism" id="xo-angpix" value="1.0" min="0.01" step="0.01"><span class="tblbl">Å (micrograph, not box)</span></div>
         <div class="fr" title="Filaments with this many particles or fewer are excluded (need >MIN PART, strictly more). Short filaments rarely contain a same-class particle pair at all, and contribute noise rather than signal to the distance histogram."><div class="fl">MIN PART</div><input type="number" class="fism" id="xo-minpart" value="20" min="1" step="1"><span class="tblbl">per filament</span></div>
@@ -440,6 +451,16 @@ input[type=checkbox]{accent-color:var(--gold);}
       <input type="checkbox" id="snap"><label for="snap" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d);cursor:pointer;margin-left:3px">SNAP</label>
       <input type="number" id="snap-sz" value="10" min="1" max="100" style="width:38px;background:var(--pan3);border:1px solid var(--bdr);border-radius:3px;padding:2px 4px;color:var(--txt);font-family:'IBM Plex Mono',monospace;font-size:10px;outline:none;margin-left:3px">
       <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d)">px</span>
+      <div style="width:1px;height:20px;background:var(--bdr);margin:0 3px"></div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d)" title="How overlapping class averages are combined when the sinogram/cross-section is assembled">OVERLAP</span>
+      <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden">
+        <button id="ctb-ow-equal-btn" onclick="setOverlapMode('equal')" style="padding:2px 6px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf" title="Equal: weighted average (see the two factors to the right)">EQ</button>
+        <button id="ctb-ow-top-btn" onclick="setOverlapMode('top')" style="padding:2px 6px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)" title="Top: front-most (last-placed) class wins in an overlap">TOP</button>
+        <button id="ctb-ow-max-btn" onclick="setOverlapMode('max')" style="padding:2px 6px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d)" title="Max: highest raw value wins at every overlapping pixel - no blending, no weighting">MAX</button>
+      </div>
+      <label id="ctb-ow-count-lbl" style="display:flex;align-items:center;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);cursor:pointer" title="Weight by particle count (Equal mode; needs a CHEP particle STAR)"><input type="checkbox" id="ctb-ow-count-ck" onchange="toggleOverlapCount(this.checked)" style="accent-color:var(--gold)">Prt</label>
+      <label id="ctb-ow-dist-lbl" style="display:flex;align-items:center;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);cursor:pointer" title="Weight by distance from each class average's own box center (Equal mode)"><input type="checkbox" id="ctb-ow-dist-ck" onchange="toggleOverlapDist(this.checked)" style="accent-color:var(--gold)">Ctr</label>
+      <input type="number" id="ctb-ow-distpow" value="1" min="0.1" max="8" step="0.1" oninput="setOverlapDistPow(this.value)" title="Distance-weight falloff power: 1 = linear, higher = concentrated near the box center" style="width:32px;background:var(--pan3);border:1px solid var(--bdr);border-radius:3px;padding:2px 3px;color:var(--txt);font-family:'IBM Plex Mono',monospace;font-size:9px;outline:none">
       <div style="width:1px;height:20px;background:var(--bdr);margin:0 3px"></div>
       <div id="roi-badge" style="display:none;background:rgba(71,0,36,.7);border:1px solid var(--burg-l);border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#fcc">ROI <span id="roi-inf"></span></div>
       <button class="btn sm dng" id="roi-clr" style="display:none;width:auto" onclick="clearROI()">X ROI</button>
@@ -557,7 +578,9 @@ input[type=checkbox]{accent-color:var(--gold);}
     <div class="rf"><div class="rl">CENTER Y (world px)</div><input type="number" class="ri" id="roi-cy" step="1" oninput="applyROICtrl()"></div>
     <div class="rf"><div class="rl">WIDTH (world px)</div><input type="number" class="ri" id="roi-rw" min="4" step="1" oninput="applyROICtrl()"></div>
     <div class="rf"><div class="rl">HEIGHT (world px)</div><input type="number" class="ri" id="roi-rh" min="4" step="1" oninput="applyROICtrl()"></div>
+    <div class="rf"><div class="rl">ROTATION (deg)</div><input type="number" class="ri" id="roi-rot" step="1" oninput="applyROICtrl()"></div>
   </div>
+  <div style="padding:0 10px 8px"><input type="range" id="roi-rot-slider" min="-180" max="180" step="1" value="0" style="width:100%" oninput="document.getElementById('roi-rot').value=this.value;applyROICtrl()"></div>
   <div style="padding:0 10px 8px;display:flex;gap:5px">
     <button class="btn pri sm" onclick="snapROIToContent()" style="flex:1;width:auto">Snap to Fibril</button>
     <button class="btn sm" onclick="snapROIToCanvas()" style="flex:1;width:auto">Canvas Ctr</button>
@@ -621,7 +644,12 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div style="border:1px solid var(--bdr);border-radius:3px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;min-height:60px"><canvas id="xs-prev" style="image-rendering:pixelated;max-width:100%;max-height:100px"></canvas></div>
         <div class="ibox"><div>ROI: <span class="v" id="xs-pinf">--</span></div><div>Helix axis: <span class="v">X direction</span></div></div>
         <div class="stit" style="margin-top:8px">OVERLAP WEIGHTING</div>
-        <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;margin-bottom:6px"><button id="xs-ow-equal-btn" onclick="setOverlapMode('equal')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.5px">EQUAL</button><button id="xs-ow-top-btn" onclick="setOverlapMode('top')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px">TOP</button><button id="xs-ow-count-btn" onclick="setOverlapMode('count')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px">COUNT</button></div>
+        <div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;margin-bottom:6px"><button id="xs-ow-equal-btn" onclick="setOverlapMode('equal')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.5px" title="Overlapping classes are blended into a weighted average (see the factors below)">EQUAL</button><button id="xs-ow-top-btn" onclick="setOverlapMode('top')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px" title="Only the front-most (top) class shows in an overlap (soft-edge over-composite)">TOP</button><button id="xs-ow-max-btn" onclick="setOverlapMode('max')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px" title="At every overlapping pixel, keep whichever class has the highest raw value there - no blending, no weighting">MAX</button></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;row-gap:4px;margin-bottom:6px">
+          <label id="xs-ow-count-lbl" style="display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);cursor:pointer" title="Scale each class's contribution by its particle count (needs a CHEP particle STAR; classes averaged from more particles count for more)"><input type="checkbox" id="xs-ow-count-ck" onchange="toggleOverlapCount(this.checked)" style="accent-color:var(--gold)">particles</label>
+          <label id="xs-ow-dist-lbl" style="display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);cursor:pointer" title="Scale each class's contribution by distance from that class's own box center - the middle of each class average is trusted more than its periphery"><input type="checkbox" id="xs-ow-dist-ck" onchange="toggleOverlapDist(this.checked)" style="accent-color:var(--gold)">dist. from center</label>
+          <span style="display:flex;align-items:center;gap:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d)">pow</span><input type="number" id="xs-ow-distpow" value="1" min="0.1" max="8" step="0.1" oninput="setOverlapDistPow(this.value)" title="Falloff sharpness for the distance weight: 1 = linear, higher = concentrated near the box center, lower = gentler/broader" style="width:38px;background:var(--pan3);border:1px solid var(--bdr);border-radius:3px;padding:2px 4px;color:var(--txt);font-family:'IBM Plex Mono',monospace;font-size:9px;outline:none"></span>
+        </div>
         <div class="stit">RECONSTRUCTION</div>
         <div class="fr" style="margin-bottom:5px" title="Method used to reconstruct the cross-section from the stitched sinogram. FBP (filtered back-projection): fast, standard, one-shot. SART: iterative algebraic reconstruction - slower, but can reduce streak artifacts and cope better with a limited/uneven angular range (which is common here, since the sinogram only spans what your placed classes cover).">
           <div class="fl">METHOD</div>
@@ -645,7 +673,9 @@ input[type=checkbox]{accent-color:var(--gold);}
         <div class="stit">ROI SIZE (live)</div>
         <div class="fr" style="margin-bottom:4px" title="Width in pixels of the region-of-interest used to build the stitched sinogram for reconstruction. Editing this resizes the ROI in place (centered) - click Recompute to actually re-run the reconstruction at the new size."><div class="fl">WIDTH</div><input type="number" class="fi" id="xs-roi-w" min="4" step="1" oninput="xsAdjustROI()"><div class="tblbl">px</div></div>
         <div class="fr" style="margin-bottom:4px" title="Height in pixels of the region-of-interest used to build the stitched sinogram for reconstruction. Editing this resizes the ROI in place (centered) - click Recompute to actually re-run the reconstruction at the new size."><div class="fl">HEIGHT</div><input type="number" class="fi" id="xs-roi-h" min="4" step="1" oninput="xsAdjustROI()"><div class="tblbl">px</div></div>
-        <div style="display:flex;gap:4px;margin-bottom:6px"><button class="btn sm pri" onclick="xsRerunFromROI()" style="flex:1" title="Applies the WIDTH/HEIGHT above to the ROI and re-runs the cross-section reconstruction from scratch.">Recompute</button><button class="btn sm" onclick="xsSyncROIToPanel()" style="flex:1" title="Pulls the current ROI's actual size (as drawn on the main canvas) back into the WIDTH/HEIGHT fields above, without changing anything.">From canvas</button></div>
+        <div class="fr" style="margin-bottom:4px" title="Rotation of the ROI rectangle (degrees), about its own center. Use this to align the ROI's local width axis - the 'helix ->' direction - with a fibril that isn't perfectly horizontal in the stitched arrangement."><div class="fl">ROTATION</div><input type="number" class="fi" id="xs-roi-rot" step="1" value="0" oninput="xsAdjustROI()"><div class="tblbl">deg</div></div>
+        <input type="range" id="xs-roi-rot-slider" min="-15" max="15" step="0.5" value="0" title="Fine adjustment only - for larger rotations, drag the ROI's rotation handle on the canvas or type a value directly into the field above" style="width:100%;margin-bottom:6px" oninput="document.getElementById('xs-roi-rot').value=this.value;xsAdjustROI()">
+        <div style="display:flex;gap:4px;margin-bottom:6px"><button class="btn sm pri" onclick="xsRerunFromROI()" style="flex:1" title="Applies the WIDTH/HEIGHT/ROTATION above to the ROI and re-runs the cross-section reconstruction from scratch.">Recompute</button><button class="btn sm" onclick="xsSyncROIToPanel()" style="flex:1" title="Pulls the current ROI's actual size and rotation (as drawn on the main canvas) back into the fields above, without changing anything.">From canvas</button></div>
         <div id="xs-ent-wrap" style="display:none;margin-top:4px" title="Shannon entropy of the reconstructed cross-section's pixel-value histogram. A rough sharpness/structure proxy: a cross-section with real, well-defined density tends to read lower than a flat/noisy one - useful for comparing reconstruction settings against each other, not an absolute quality threshold."><div class="stit">ENTROPY</div><div class="entropy-badge">H = <span id="xs-entropy">--</span> bits</div></div>
         <div style="margin-top:8px"><div class="stit">CROSSOVER SOLVER</div>
           <button class="btn sm pri" id="xs-co-btn" onclick="solveCrossover()" style="width:100%;margin-bottom:4px" title="Brute-forces the inter-class step: for each step it sums the overlap cross-correlation of adjacent classes; the step with the highest summed NCC gives the crossover (= total aligned width). No crossover assumed.">Solve C/O (overlap NCC)</button>
@@ -805,7 +835,7 @@ input[type=checkbox]{accent-color:var(--gold);}
 </div>
 
 <script>
-const APP_VERSION='1.0.0';
+const APP_VERSION='1.1.0';
 const APP_LICENSE_TEXT=`                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
@@ -1550,7 +1580,10 @@ let xsCMode='sigma',xsManLo=0,xsManHi=255,xsGamma=1.0,xsBright=0;
 // How overlapping class averages are combined when assembling the sinogram:
 // 'equal' = soft-edge weighted average (all classes equal), 'top' = front-most class
 // wins (soft-edge over-composite), 'count' = weighted average by particle count.
-let overlapWeightMode='equal';
+let overlapWeightMode='equal';   // blend strategy: 'equal' (weighted average) | 'top' (front-most wins) | 'max' (per-pixel max)
+let overlapUseCount=false;       // weight factor (mode==='equal' only): scale by each class's particle count
+let overlapUseDist=false;        // weight factor (mode==='equal' only): scale by distance from the class average's own box center
+let overlapDistPow=1;            // falloff sharpness for the distance weight: 1=linear, >1=sharper/center-only, <1=gentler
 let xsVpZ=1,xsVpX=0,xsVpY=0;
 let xsScVpZ=1,xsScVpX=0,xsScVpY=0;
 let xsReprojData=null,xsReprojW=0,xsReprojH=0;
@@ -1589,6 +1622,17 @@ const yf=()=>new Promise(r=>setTimeout(r,0));
 const instCX=inst=>inst.x+iDispW(inst)/2;
 const instCY=inst=>inst.y+iDispH(inst)/2;
 function rotHandleScreen(inst){const cx=instCX(inst)*vpZ+vpX,cy=instCY(inst)*vpZ+vpY,a=(inst.rotate-90)*Math.PI/180;return{x:cx+Math.cos(a)*ROT_DIST,y:cy+Math.sin(a)*ROT_DIST};}
+// ROI rotation handle: anchored just beyond the ROI's own (rotated) top edge, rather than at a
+// fixed radius from center like the instance handle - a large ROI would otherwise bury the
+// instance-style fixed-radius handle deep inside its own rectangle.
+function roiRotHandleWorld(){
+  if(!roi)return null;
+  const rot=(roi.rot||0)*Math.PI/180;
+  const cxW=roi.x+roi.w/2,cyW=roi.y+roi.h/2;
+  const distLocal=roi.h/2+ROT_DIST/vpZ,a=rot-Math.PI/2;
+  return{x:cxW+Math.cos(a)*distLocal,y:cyW+Math.sin(a)*distLocal};
+}
+function roiRotHandleScreen(){const w=roiRotHandleWorld();return w?{x:w.x*vpZ+vpX,y:w.y*vpZ+vpY}:null;}
 function stackColor(cls){
   if(chep.colorByCluster&&cls&&chep.classLabel){const lab=chep.classLabel[cls.id];if(lab>0)return chep.clusterColors[lab-1]||'#888';}
   const s=getStack(cls?.stackId);return s?s.color:'#888';
@@ -1628,6 +1672,7 @@ function init(){
   document.getElementById('fi-chep-star').addEventListener('change',loadChepStarFile);
   document.getElementById('fi-pol-star').addEventListener('change',loadPolStarFile);
   document.getElementById('fi-xo-star').addEventListener('change',loadCoordXoStarFile);
+  document.getElementById('stack-star-input').addEventListener('change',onStackStarFileChosen);
   document.getElementById('px-inp').addEventListener('input',()=>{const b=document.getElementById('px-auto');if(b)b.style.display='none';updPxLbl();});  // #7: manual edit clears AUTO badge
   initSidebarResize();initThumbDockResize();initXSViewport();initXSScViewport();render();
   r2oLoadTrackedOutputs();
@@ -1737,7 +1782,7 @@ function parseMRC(buf,fname='stack'){
   // unsigned bytes by writing its stamp WITHOUT the signed-bytes flag (bit 0).
   const imodStamp=dv.getInt32(152,true),imodFlags=dv.getInt32(156,true);
   const mode0Signed=!(imodStamp===1146047817&&!(imodFlags&1));
-  const sc={id:nextStackId++,name:fname,color:STACK_COLORS[stacks.length%STACK_COLORS.length],classIdStart:classes.length,classCount:nz};
+  const sc={id:nextStackId++,name:fname,color:STACK_COLORS[stacks.length%STACK_COLORS.length],classIdStart:classes.length,classCount:nz,star:null};
   stacks.push(sc);const pps=nx*ny;
   for(let i=0;i<nz;i++){
     const raw=new Float32Array(pps);let off=ds;
@@ -1761,10 +1806,28 @@ function updStacksList(){
   document.getElementById('stk-cnt').textContent=`(${stacks.length})`;
   [...list.querySelectorAll('.stack-item')].forEach(el=>{if(!stacks.find(s=>s.id===+el.dataset.sid))el.remove();});
   stacks.forEach(stk=>{
-    if(list.querySelector(`[data-sid="${stk.id}"]`))return;
-    const el=document.createElement('div');el.className='stack-item';el.dataset.sid=stk.id;
-    el.innerHTML=`<div class="stack-swatch" id="swatch-${stk.id}" style="background:${stk.color}"><input type="color" value="${stk.color}" oninput="changeStackColor(${stk.id},this.value)"></div><div class="stack-info"><div class="stack-name" title="${stk.name}">${stk.name}</div><div class="stack-meta">${stk.classCount} classes</div></div><div class="stack-del" onclick="removeStack(${stk.id})">X</div>`;
-    list.appendChild(el);
+    let el=list.querySelector(`[data-sid="${stk.id}"]`);
+    if(!el){
+      el=document.createElement('div');el.className='stack-item';el.dataset.sid=stk.id;
+      el.innerHTML=`<div class="stack-swatch" id="swatch-${stk.id}" style="background:${stk.color}"><input type="color" value="${stk.color}" oninput="changeStackColor(${stk.id},this.value)"></div><div class="stack-info"><div class="stack-name" title="${stk.name}">${stk.name}</div><div class="stack-meta">${stk.classCount} classes</div></div><div class="stack-star" id="star-badge-${stk.id}"></div><div class="stack-del" onclick="removeStack(${stk.id})">X</div>`;
+      list.appendChild(el);
+    }
+    // Refresh the STAR badge every call (not just at creation) - linkStarToStack/unlinkStackStar
+    // can change stk.star for a row that already exists.
+    const badge=document.getElementById(`star-badge-${stk.id}`);
+    if(badge){
+      if(stk.star){
+        badge.textContent='★ STAR';
+        badge.title=`Linked STAR: ${stk.star.starName} - available to CHEP, Polarity, Crossover(coords) and particle-count weighting. Click to unlink.`;
+        badge.onclick=()=>unlinkStackStar(stk.id);
+        badge.classList.add('linked');
+      }else{
+        badge.textContent='☆ STAR';
+        badge.title="No STAR linked - click to load this stack's particles .star once, for use by every tool that needs it.";
+        badge.onclick=()=>triggerStackStarPick(stk.id);
+        badge.classList.remove('linked');
+      }
+    }
   });
 }
 function changeStackColor(sid,color){const stk=getStack(sid);if(!stk)return;stk.color=color;const sw=document.getElementById(`swatch-${sid}`);if(sw)sw.style.background=color;refreshThumbsDraw();render();}
@@ -1818,6 +1881,275 @@ function parseStarFile(text){
   return{var_,data,optics};
 }
 
+// ════════════ CRYOSPARC .CS FILE IMPORT ════════════
+// A CryoSPARC .cs file is a NumPy structured-array binary (.npy format with a compound
+// dtype), not a plain-text table like a RELION STAR file, and it uses different conventions
+// for several of the same concepts:
+//   - class number: CryoSPARC's alignments2D/class is 0-indexed; RELION's _rlnClassNumber
+//     is 1-indexed - converted here by adding 1.
+//   - in-plane rotation: alignments2D/pose is in RADIANS; _rlnAnglePsi is in DEGREES.
+//   - pick coordinates: location/center_x_frac and center_y_frac are FRACTIONS of the
+//     micrograph (0-1), not absolute pixels like _rlnCoordinateX/Y - converted here to
+//     pixels using location/micrograph_shape when that field is present.
+//   - helical filament grouping has no single standardized CryoSPARC field across versions;
+//     several candidate names are tried, falling back to "one filament per micrograph" if
+//     none are found (flagged clearly in the import report, since that's only a coarse
+//     approximation of true per-filament grouping).
+// parseCsFile() converts all this into the exact same {var_,data,optics} shape
+// parseStarFile() produces, so every existing consumer (buildChepMatrix, buildPolarityData,
+// buildCoordXoData, classParticleCounts) works unchanged regardless of which format was loaded.
+
+// Minimal parser for the restricted Python-literal grammar used in NPY headers: dicts,
+// lists, tuples, single/double-quoted strings, numbers, True/False/None.
+function _pyLiteralParse(s){
+  let i=0;
+  const skip=()=>{while(i<s.length&&/\s/.test(s[i]))i++;};
+  function val(){
+    skip();
+    const c=s[i];
+    if(c==='{')return dict();
+    if(c==='[')return list();
+    if(c==='(')return tuple();
+    if(c==="'"||c==='"')return str();
+    if(s.startsWith('True',i)){i+=4;return true;}
+    if(s.startsWith('False',i)){i+=5;return false;}
+    if(s.startsWith('None',i)){i+=4;return null;}
+    return num();
+  }
+  function str(){const q=s[i];i++;let out='';while(i<s.length&&s[i]!==q){if(s[i]==='\\'){out+=s[i+1];i+=2;}else{out+=s[i];i++;}}i++;return out;}
+  function num(){const st=i;while(i<s.length&&/[-+0-9.eE]/.test(s[i]))i++;return Number(s.slice(st,i));}
+  function list(){i++;const a=[];skip();while(s[i]!==']'){a.push(val());skip();if(s[i]===','){i++;skip();}}i++;return a;}
+  function tuple(){i++;const a=[];skip();while(s[i]!==')'){a.push(val());skip();if(s[i]===','){i++;skip();}}i++;return a;}
+  function dict(){i++;const o={};skip();while(s[i]!=='}'){const k=val();skip();if(s[i]===':'){i++;skip();}const v=val();o[k]=v;skip();if(s[i]===','){i++;skip();}}i++;return o;}
+  return val();
+}
+// One NumPy dtype "typestr" (e.g. '<u8', '<f4', 'S24', '|b1', '<U12') -> {size,read(dv,byteOffset)}.
+// Assumes little-endian (true for every real-world x86/ARM-generated .cs file).
+function _npyFieldReader(typestr){
+  const m=/^([<>|=]?)([a-zA-Z])(\d+)$/.exec(typestr);
+  if(!m)throw new Error('Unrecognized NumPy dtype: '+typestr);
+  const kind=m[2],size=+m[3];
+  if(kind==='S'){
+    return{size,read:(dv,off)=>{
+      const bytes=new Uint8Array(dv.buffer,dv.byteOffset+off,size);
+      let end=bytes.indexOf(0);if(end<0)end=size;
+      return new TextDecoder('utf-8',{fatal:false}).decode(bytes.subarray(0,end));
+    }};
+  }
+  if(kind==='U'){
+    return{size:size*4,read:(dv,off)=>{
+      const cu=new Array(size);for(let k=0;k<size;k++)cu[k]=dv.getUint32(off+k*4,true);
+      let end=0;while(end<size&&cu[end]!==0)end++;
+      return String.fromCodePoint(...cu.slice(0,end));
+    }};
+  }
+  // CryoSPARC's 64-bit uid fields (uid, micrograph_uid, filament_uid, import_sig, ...) are
+  // essentially random 64-bit values that routinely exceed Number.MAX_SAFE_INTEGER (e.g. real
+  // filament_uid values like 7193796613626050031) - every use of these fields here is as an
+  // opaque identity/grouping key, never arithmetic, so read them as the EXACT BigInt string
+  // rather than a Number, which would silently round/collide distinct ids.
+  if((kind==='u'||kind==='i')&&size===8){
+    const fn=kind==='u'?'getBigUint64':'getBigInt64';
+    return{size,read:(dv,off)=>dv[fn](off,true).toString()};
+  }
+  const readers={u:{1:'getUint8',2:'getUint16',4:'getUint32'},
+    i:{1:'getInt8',2:'getInt16',4:'getInt32'},
+    f:{4:'getFloat32',8:'getFloat64'},b:{1:'getUint8'}};
+  const fn=readers[kind]&&readers[kind][size];
+  if(!fn)throw new Error('Unsupported NumPy dtype: '+typestr);
+  return{size,read:(dv,off)=>dv[fn](off,true)};
+}
+
+function parseCsFile(buf){
+  const dv=new DataView(buf);
+  const MAGIC=[0x93,0x4e,0x55,0x4d,0x50,0x59];
+  for(let k=0;k<6;k++)if(dv.getUint8(k)!==MAGIC[k])throw new Error('Not a CryoSPARC .cs (NumPy) file - bad header magic');
+  const verMajor=dv.getUint8(6);
+  let headerLen,headerStart;
+  if(verMajor===1){headerLen=dv.getUint16(8,true);headerStart=10;}
+  else{headerLen=dv.getUint32(8,true);headerStart=12;}
+  const headerText=new TextDecoder('latin1').decode(new Uint8Array(buf,headerStart,headerLen));
+  const dataStart=headerStart+headerLen;
+  const header=_pyLiteralParse(headerText.trim());
+  if(!Array.isArray(header.descr))throw new Error('.cs file has no structured dtype (descr) - not a particle dataset');
+  const nRec=header.shape[0]||0;
+
+  // Build the record layout: each field's byte offset within one record, in declaration order
+  // (NumPy structured arrays are packed sequentially - an unsizable field would corrupt every
+  // subsequent field's offset, so an unsupported dtype aborts the whole import rather than
+  // silently misreading the rest of the file).
+  let offset=0;const fields={};
+  header.descr.forEach(entry=>{
+    const name=entry[0],typestr=entry[1],subShape=entry[2]||[];
+    const count=subShape.length?subShape.reduce((a,b)=>a*b,1):1;
+    const base=_npyFieldReader(typestr);
+    fields[name]={offset,base,count};
+    offset+=base.size*count;
+  });
+  const itemsize=offset;
+  const need=dataStart+itemsize*nRec;
+  if(buf.byteLength<need)throw new Error(`.cs file is truncated: need ${need} bytes for ${nRec} records of ${itemsize} bytes, got ${buf.byteLength}`);
+
+  function fieldValues(name,subIdx){
+    const f=fields[name];if(!f)return null;
+    const out=new Array(nRec);
+    for(let r=0;r<nRec;r++)out[r]=f.base.read(dv,dataStart+r*itemsize+f.offset+(subIdx||0)*f.base.size);
+    return out;
+  }
+  const names=Object.keys(fields);
+  const has=n=>names.includes(n);
+  const findFirst=cands=>cands.find(has);
+  const findByPattern=(...pats)=>names.find(n=>{const l=n.toLowerCase();return pats.every(p=>l.includes(p));});
+  const report=[];
+  const caveats=[]; // subset of report lines that reflect a missing field/fallback, not a clean find - only these are worth interrupting the user about
+
+  // --- micrograph identity (grouping key only - doesn't need to be a real path) ---
+  let micField=findFirst(['location/micrograph_path','micrograph_blob/path'])||findByPattern('micrograph','path');
+  let micVals;
+  if(micField){micVals=fieldValues(micField);report.push(`Micrograph identity: "${micField}" (path)`);}
+  else{
+    micField=findFirst(['location/micrograph_uid'])||findByPattern('micrograph','uid');
+    if(micField){micVals=fieldValues(micField).map(String);report.push(`Micrograph identity: "${micField}" (numeric UID - no path field found)`);}
+    else{const msg='Micrograph identity: NOT FOUND - all particles grouped as one micrograph (filament/micrograph-based grouping will be wrong)';micVals=new Array(nRec).fill('unknown_mic');report.push(msg);caveats.push(msg);}
+  }
+
+  // --- class number: CryoSPARC 0-indexed -> RELION 1-indexed ---
+  let clsField=findFirst(['alignments2D/class','alignments3D/class'])||findByPattern('alignments2d','class')||findByPattern('alignments3d','class');
+  let clsVals;
+  if(clsField){clsVals=fieldValues(clsField).map(v=>v+1);report.push(`Class assignment: "${clsField}" (CryoSPARC is 0-indexed; +1 applied to match RELION's _rlnClassNumber)`);}
+  else{const msg='Class assignment: NOT FOUND - all particles assigned to class 1';clsVals=new Array(nRec).fill(1);report.push(msg);caveats.push(msg);}
+
+  // --- helical filament/tube grouping: no single standard CS field, best-effort search ---
+  let filField=findFirst(['filament/filament_uid','filament_pose/filament_uid'])||findByPattern('filament','uid')||findByPattern('filament','id');
+  let filVals;
+  if(filField){filVals=fieldValues(filField);report.push(`Filament/tube grouping: "${filField}"`);}
+  else{const msg='Filament/tube grouping: NOT FOUND - falling back to one filament per micrograph (coarse approximation; a true per-filament field needs a CryoSPARC Helical Refinement export)';filVals=micVals;report.push(msg);caveats.push(msg);}
+
+  // --- in-plane rotation: radians -> degrees ---
+  let psiField=findFirst(['alignments2D/pose'])||findByPattern('alignments2d','pose');
+  let psiVals=null;
+  if(psiField){
+    const f=fields[psiField];
+    const idx=f.count>1?f.count-1:0; // best-effort: for a multi-component pose, the in-plane angle is conventionally the last component - verify against your own export
+    psiVals=fieldValues(psiField,idx).map(v=>v*180/Math.PI);
+    report.push(`In-plane rotation (psi): "${psiField}"${f.count>1?` (component ${idx} of ${f.count} - verify this is really the rotation angle)`:''}, radians converted to degrees`);
+  }
+
+  // --- alignment confidence (optional) ---
+  let probField=findFirst(['alignments2D/class_posterior','alignments2D/prob'])||findByPattern('alignments2d','posterior')||findByPattern('alignments2d','prob');
+  let probVals=probField?fieldValues(probField):null;
+  if(probField)report.push(`Alignment confidence: "${probField}"`);
+
+  // --- pick coordinates: CryoSPARC fractional (0-1) -> RELION absolute pixels ---
+  let cxField=findFirst(['location/center_x_frac'])||findByPattern('center_x_frac');
+  let cyField=findFirst(['location/center_y_frac'])||findByPattern('center_y_frac');
+  let cxVals=null,cyVals=null;
+  if(cxField&&cyField){
+    const shapeField=findFirst(['location/micrograph_shape'])||findByPattern('micrograph_shape');
+    const fxVals=fieldValues(cxField),fyVals=fieldValues(cyField);
+    if(shapeField){
+      // NumPy/CryoSPARC convention: micrograph_shape is [ny (rows), nx (cols)].
+      const nyVals=fieldValues(shapeField,0),nxVals=fieldValues(shapeField,1);
+      cxVals=fxVals.map((v,i)=>v*nxVals[i]);
+      cyVals=fyVals.map((v,i)=>v*nyVals[i]);
+      report.push(`Pick coordinates: "${cxField}"/"${cyField}" (fractional 0-1) converted to pixels using "${shapeField}"`);
+    }else{
+      const msg=`Pick coordinates: "${cxField}"/"${cyField}" - NO micrograph_shape field found, left as fractional 0-1 (NOT pixels - Crossover-from-coordinates distances will be wrong unless you account for this)`;
+      cxVals=fxVals;cyVals=fyVals;
+      report.push(msg);caveats.push(msg);
+    }
+  }
+
+  // --- assemble the RELION-shaped {var_,data} table every existing consumer expects ---
+  const var_=['_rlnMicrographName','_rlnHelicalTubeID','_rlnClassNumber'];
+  if(psiVals)var_.push('_rlnAnglePsi');
+  if(probVals)var_.push('_rlnMaxValueProbDistribution');
+  if(cxVals){var_.push('_rlnCoordinateX','_rlnCoordinateY');}
+  const data=new Array(nRec);
+  for(let r=0;r<nRec;r++){
+    const row=[String(micVals[r]),String(filVals[r]),String(clsVals[r])];
+    if(psiVals)row.push(String(psiVals[r]));
+    if(probVals)row.push(String(probVals[r]));
+    if(cxVals){row.push(String(cxVals[r]),String(cyVals[r]));}
+    data[r]=row;
+  }
+  return{
+    var_,data,optics:[],
+    report:`CryoSPARC .cs import (${nRec} particles):\n- `+report.join('\n- '),
+    hasCaveats:caveats.length>0,
+  };
+}
+// Reads either a RELION .star (text) or CryoSPARC .cs (NumPy binary) file, dispatching on
+// extension, and hands back the same {starName,var_,data,optics} shape either way so every
+// caller (CHEP/Polarity/Crossover(coords)/per-stack linking) stays format-agnostic. Shows the
+// CS import report (which fields were found vs. assumed) once per import.
+function readParticleFile(file,onParsed,onError){
+  const isCs=/\.cs$/i.test(file.name);
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const result=isCs?parseCsFile(ev.target.result):parseStarFile(ev.target.result);
+      // Only interrupt the user when something was actually missing/assumed (e.g. no true
+      // filament field, coordinates left fractional) - a clean import says nothing, since a
+      // plain alert() reads as an error dialog even when it's purely informational.
+      if(isCs&&result.hasCaveats)alert('CryoSPARC import notes (informational - the import itself succeeded):\n\n'+result.report);
+      onParsed({starName:file.name,var_:result.var_,data:result.data,optics:result.optics||[]});
+    }catch(err){onError(err);}
+  };
+  r.onerror=()=>onError(new Error('Could not read file'));
+  if(isCs)r.readAsArrayBuffer(file);else r.readAsText(file);
+}
+
+// ════════════ PER-STACK LINKED STAR ════════════
+// A stack's `.star` ({starName,var_,data,optics} - the raw parsed STAR, before any
+// tool-specific column extraction) is the single source of truth once linked: CHEP,
+// Polarity, and (best-effort) the coordinate-based Crossover solver all adopt it
+// automatically for whichever stack they're targeting, so the same particles.star only
+// needs to be loaded once - via any one of those tools' own "load STAR" button, or the
+// STAR icon in the STACKS list - rather than re-uploaded separately per tool.
+function linkStarToStack(stackId,starRaw){
+  const stk=getStack(stackId);if(!stk)return;
+  stk.star=starRaw;
+  updStacksList();
+  // Give CHEP/Polarity a chance to auto-adopt this star right now if they don't already have
+  // their own loaded (both calls are already safe/idempotent - they only auto-adopt when that
+  // tool is empty, same as when its own target-stack dropdown changes) - otherwise linking via
+  // one tool only benefits it until the OTHER tool's dropdown happens to be touched later.
+  updChepTargetOptions();
+  updPolTargetOptions();
+  if(!coordXo.data)autoFillCoordXoFromLinkedStars();
+}
+function unlinkStackStar(stackId){
+  const stk=getStack(stackId);if(!stk)return;
+  stk.star=null;
+  updStacksList();
+}
+let _stackStarPickTarget=null;
+function triggerStackStarPick(stackId){_stackStarPickTarget=stackId;document.getElementById('stack-star-input').click();}
+function onStackStarFileChosen(e){
+  const f=e.target.files[0];const stackId=_stackStarPickTarget;
+  if(!f||stackId==null){e.target.value='';return;}
+  readParticleFile(f,
+    starRaw=>{
+      linkStarToStack(stackId,starRaw);
+      if(chep.targetStackId===stackId)chepSetTarget(stackId);
+      if(pol.targetStackId===stackId)polSetTarget(stackId);
+    },
+    err=>alert('STAR/CS parse error: '+err.message)
+  );
+  e.target.value='';
+}
+// Crossover(coords) has no per-stack target of its own (a crossover estimate from picking
+// coordinates isn't tied to a specific 2D-classification stack) - so it just adopts the
+// first linked star (from any stack) that has the columns it needs, if it doesn't already
+// have its own data loaded.
+function autoFillCoordXoFromLinkedStars(){
+  if(coordXo.data)return;
+  const stk=stacks.find(s=>s.star&&buildCoordXoData(s.star.var_,s.star.data));
+  if(!stk)return;
+  applyStarToCoordXo(stk.star,true);
+}
+
 function buildChepMatrix(varArr,dataArr){
   const colTube=varArr.indexOf('_rlnHelicalTubeID');
   const colClass=varArr.indexOf('_rlnClassNumber');
@@ -1837,24 +2169,34 @@ function buildChepMatrix(varArr,dataArr){
   return{filId,clsId,nFil:nextId-1,nCls,Np};
 }
 
+// Applies an already-parsed raw STAR ({starName,var_,data,optics}) to CHEP's working state.
+// Shared by a fresh file upload, adopting a stack's already-linked star, and switching targets.
+function applyStarToChep(starRaw,silent){
+  const matrix=buildChepMatrix(starRaw.var_,starRaw.data);
+  if(!matrix){if(!silent)alert('STAR file is missing one of the required columns: _rlnHelicalTubeID, _rlnClassNumber, _rlnMicrographName');return false;}
+  chep.rlnvar=starRaw.var_;chep.rlndata=starRaw.data;chep.optics=starRaw.optics;chep.starName=starRaw.starName;
+  chep.filId=matrix.filId;chep.clsId=matrix.clsId;chep.nFil=matrix.nFil;chep.nClsStar=matrix.nCls;
+  return true;
+}
 function loadChepStarFile(e){
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const parsed=parseStarFile(ev.target.result);
-      const matrix=buildChepMatrix(parsed.var_,parsed.data);
-      if(!matrix){alert('STAR file is missing one of the required columns: _rlnHelicalTubeID, _rlnClassNumber, _rlnMicrographName');return;}
-      chep.rlnvar=parsed.var_;chep.rlndata=parsed.data;chep.optics=parsed.optics;
-      chep.filId=matrix.filId;chep.clsId=matrix.clsId;chep.nFil=matrix.nFil;chep.nClsStar=matrix.nCls;
-      chep.starName=f.name;
-      updChepTargetOptions();
-    }catch(err){alert('STAR parse error: '+err.message);}
-  };
-  r.readAsText(f);e.target.value='';
+  readParticleFile(f,
+    starRaw=>{
+      if(!applyStarToChep(starRaw))return;
+      refreshChepTargetDropdown();
+      // A fresh upload via THIS tool's own button always wins - link it onto the target stack
+      // so Polarity/Crossover(coords)/the particle-count overlap weight pick it up too.
+      if(chep.targetStackId!=null)linkStarToStack(chep.targetStackId,starRaw);
+      updChepStatus();
+      document.getElementById('chep-run-btn').disabled=!(chep.filId&&chep.targetStackId);
+    },
+    err=>alert('STAR/CS parse error: '+err.message)
+  );
+  e.target.value='';
 }
-
-function updChepTargetOptions(){
+// Rebuilds the target-stack <select> and picks/keeps a target, WITHOUT touching chep's
+// already-loaded star data (used when the stack list changes, not when switching target).
+function refreshChepTargetDropdown(){
   const row=document.getElementById('chep-target-row');
   const sel=document.getElementById('chep-target-stack');
   if(stacks.length<=1){
@@ -1866,6 +2208,25 @@ function updChepTargetOptions(){
     sel.innerHTML=stacks.map(s=>`<option value="${s.id}">${s.name} (${s.classCount} cls)</option>`).join('');
     chep.targetStackId=(prev&&stacks.find(s=>s.id===prev))?prev:(stacks[0]?.id??null);
     if(chep.targetStackId!=null)sel.value=chep.targetStackId;
+  }
+}
+// Explicit target switch (dropdown onchange, or a stack's STAR icon being loaded while it's
+// the current target): always (re)syncs from that stack's linked star, if any.
+function chepSetTarget(stackId){
+  chep.targetStackId=stackId;
+  const sel=document.getElementById('chep-target-stack');if(sel&&stackId!=null)sel.value=stackId;
+  const stk=stackId!=null?getStack(stackId):null;
+  if(stk?.star)applyStarToChep(stk.star,true);
+  updChepStatus();
+  document.getElementById('chep-run-btn').disabled=!(chep.filId&&chep.targetStackId);
+}
+function updChepTargetOptions(){
+  refreshChepTargetDropdown();
+  // Fresh session / no CHEP star loaded yet - silently adopt the newly (re)selected target
+  // stack's linked star, if it has one, rather than forcing a redundant re-upload.
+  if(chep.targetStackId!=null&&!chep.filId){
+    const stk=getStack(chep.targetStackId);
+    if(stk?.star)applyStarToChep(stk.star,true);
   }
   updChepStatus();
   document.getElementById('chep-run-btn').disabled=!(chep.filId&&chep.targetStackId);
@@ -2723,27 +3084,39 @@ function buildPolarityData(varArr,dataArr){
   return{presentClasses,byClassFilPsi,nFil:nextFil,nPart,hasProb};
 }
 
+// Applies an already-parsed raw STAR ({starName,var_,data,optics}) to Polarity's working
+// state. Shared by a fresh file upload, adopting a stack's already-linked star, and switching
+// targets - any previous flip result is invalidated since it came from different data.
+function applyStarToPol(starRaw,silent){
+  const data=buildPolarityData(starRaw.var_,starRaw.data);
+  if(!data){if(!silent)alert('STAR file is missing a required column: _rlnHelicalTubeID, _rlnClassNumber, _rlnMicrographName, _rlnAnglePsi (and ideally _rlnMaxValueProbDistribution)');return false;}
+  pol.starName=starRaw.starName;pol.presentClasses=data.presentClasses;pol.byClassFilPsi=data.byClassFilPsi;
+  pol.nFil=data.nFil;pol.nPart=data.nPart;pol.hasProb=data.hasProb;
+  pol.flipVec=null;pol.classFlip=null;pol.active=false;pol.objective=0;
+  document.getElementById('pol-apply-ck').checked=false;
+  document.getElementById('pol-actions').style.display='none';
+  document.getElementById('pol-result').textContent='';
+  return true;
+}
 function loadPolStarFile(e){
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const parsed=parseStarFile(ev.target.result);
-      const data=buildPolarityData(parsed.var_,parsed.data);
-      if(!data){alert('STAR file is missing a required column: _rlnHelicalTubeID, _rlnClassNumber, _rlnMicrographName, _rlnAnglePsi (and ideally _rlnMaxValueProbDistribution)');return;}
-      pol.starName=f.name;pol.presentClasses=data.presentClasses;pol.byClassFilPsi=data.byClassFilPsi;
-      pol.nFil=data.nFil;pol.nPart=data.nPart;pol.hasProb=data.hasProb;
-      pol.flipVec=null;pol.classFlip=null;pol.active=false;pol.objective=0;
-      document.getElementById('pol-apply-ck').checked=false;
-      document.getElementById('pol-actions').style.display='none';
-      document.getElementById('pol-result').textContent='';
-      updPolTargetOptions();
-    }catch(err){alert('STAR parse error: '+err.message);}
-  };
-  r.readAsText(f);e.target.value='';
+  readParticleFile(f,
+    starRaw=>{
+      if(!applyStarToPol(starRaw))return;
+      refreshPolTargetDropdown();
+      // A fresh upload via THIS tool's own button always wins - link it onto the target stack
+      // so CHEP/Crossover(coords)/the particle-count overlap weight pick it up too.
+      if(pol.targetStackId!=null)linkStarToStack(pol.targetStackId,starRaw);
+      updPolStatus();
+      document.getElementById('pol-run-btn').disabled=!(pol.presentClasses&&pol.targetStackId);
+    },
+    err=>alert('STAR/CS parse error: '+err.message)
+  );
+  e.target.value='';
 }
-
-function updPolTargetOptions(){
+// Rebuilds the target-stack <select> and picks/keeps a target, WITHOUT touching pol's
+// already-loaded star data (used when the stack list changes, not when switching target).
+function refreshPolTargetDropdown(){
   const row=document.getElementById('pol-target-row');
   const sel=document.getElementById('pol-target-stack');
   if(stacks.length<=1){
@@ -2755,6 +3128,23 @@ function updPolTargetOptions(){
     sel.innerHTML=stacks.map(s=>`<option value="${s.id}">${s.name} (${s.classCount} cls)</option>`).join('');
     pol.targetStackId=(prev&&stacks.find(s=>s.id===prev))?prev:(stacks[0]?.id??null);
     if(pol.targetStackId!=null)sel.value=pol.targetStackId;
+  }
+}
+// Explicit target switch (dropdown onchange, or a stack's STAR icon being loaded while it's
+// the current target): always (re)syncs from that stack's linked star, if any.
+function polSetTarget(stackId){
+  pol.targetStackId=stackId;
+  const sel=document.getElementById('pol-target-stack');if(sel&&stackId!=null)sel.value=stackId;
+  const stk=stackId!=null?getStack(stackId):null;
+  if(stk?.star)applyStarToPol(stk.star,true);
+  updPolStatus();
+  document.getElementById('pol-run-btn').disabled=!(pol.presentClasses&&pol.targetStackId);
+}
+function updPolTargetOptions(){
+  refreshPolTargetDropdown();
+  if(pol.targetStackId!=null&&!pol.presentClasses){
+    const stk=getStack(pol.targetStackId);
+    if(stk?.star)applyStarToPol(stk.star,true);
   }
   updPolStatus();
   document.getElementById('pol-run-btn').disabled=!(pol.presentClasses&&pol.targetStackId);
@@ -2924,24 +3314,29 @@ function buildCoordXoData(varArr,dataArr){
   if(colMic<0||colTube<0||colCls<0||colX<0||colY<0)return null;
   return{colMic,colTube,colCls,colX,colY};
 }
+// Applies an already-parsed raw STAR ({starName,var_,data,optics}) to the coordinate-based
+// Crossover solver's working state. Shared by a fresh file upload and auto-adopting any
+// already-linked stack star (coordXo has no per-stack target of its own - see
+// autoFillCoordXoFromLinkedStars).
+function applyStarToCoordXo(starRaw,silent){
+  const cols=buildCoordXoData(starRaw.var_,starRaw.data);
+  if(!cols){if(!silent)alert('STAR file is missing a required column: _rlnMicrographName, _rlnHelicalTubeID, _rlnClassNumber, _rlnCoordinateX, _rlnCoordinateY');return false;}
+  coordXo.starName=starRaw.starName;coordXo.var_=starRaw.var_;coordXo.data=starRaw.data;coordXo.distances=null;coordXo.crossoverA=null;
+  document.getElementById('xo-status').innerHTML=`STAR: ${starRaw.starName}<br>Particles: ${starRaw.data.length}`;
+  document.getElementById('xo-cnt').textContent='(0)';
+  document.getElementById('xo-run-btn').disabled=false;
+  document.getElementById('xo-apply-btn').disabled=true;
+  document.getElementById('xo-hist-canvas').style.display='none';
+  document.getElementById('xo-result').textContent='';
+  return true;
+}
 function loadCoordXoStarFile(e){
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const parsed=parseStarFile(ev.target.result);
-      const cols=buildCoordXoData(parsed.var_,parsed.data);
-      if(!cols){alert('STAR file is missing a required column: _rlnMicrographName, _rlnHelicalTubeID, _rlnClassNumber, _rlnCoordinateX, _rlnCoordinateY');return;}
-      coordXo.starName=f.name;coordXo.var_=parsed.var_;coordXo.data=parsed.data;coordXo.distances=null;coordXo.crossoverA=null;
-      document.getElementById('xo-status').innerHTML=`STAR: ${f.name}<br>Particles: ${parsed.data.length}`;
-      document.getElementById('xo-cnt').textContent='(0)';
-      document.getElementById('xo-run-btn').disabled=false;
-      document.getElementById('xo-apply-btn').disabled=true;
-      document.getElementById('xo-hist-canvas').style.display='none';
-      document.getElementById('xo-result').textContent='';
-    }catch(err){alert('STAR parse error: '+err.message);}
-  };
-  r.readAsText(f);e.target.value='';
+  readParticleFile(f,
+    starRaw=>applyStarToCoordXo(starRaw),
+    err=>alert('STAR/CS parse error: '+err.message)
+  );
+  e.target.value='';
 }
 
 // Topographic-prominence peak finder over a 1D array (histogram counts), matching the
@@ -3110,6 +3505,50 @@ function clsToCanvas(cls,inst,cmap){
 }
 function invalidateInst(uid){const inst=getInst(uid);if(!inst)return;const prefix=`${inst.classId}|`;for(const k of renderCache.keys())if(k.startsWith(prefix))renderCache.delete(k);}
 
+function _biSampleF32(data,w,h,x,y){
+  const fx=x-0.5,fy=y-0.5,x0=Math.floor(fx),y0=Math.floor(fy),tx=fx-x0,ty=fy-y0;
+  const cx0=Math.max(0,Math.min(w-1,x0)),cx1=Math.max(0,Math.min(w-1,x0+1));
+  const cy0=Math.max(0,Math.min(h-1,y0)),cy1=Math.max(0,Math.min(h-1,y0+1));
+  const v00=data[cy0*w+cx0],v10=data[cy0*w+cx1],v01=data[cy1*w+cx0],v11=data[cy1*w+cx1];
+  return v00*(1-tx)*(1-ty)+v10*tx*(1-ty)+v01*(1-tx)*ty+v11*tx*ty;
+}
+// Raw-float counterpart of clsToCanvas: same crop window (baseW/H + per-instance trims/offset)
+// and the same rotate+mirror geometry, but sampled directly from the class's own float data - no
+// contrast auto-windowing, no colormap LUT, no 8-bit quantization, no canvas-scaling resample.
+// Used by buildStitchedROIFast so the sinogram (and everything downstream: FBP, SART, the 3D
+// map) is built from full-precision data instead of the display pipeline's rendered pixels.
+function clsToFloat(cls,inst){
+  const{raw,nx,ny}=cls;
+  const bw=baseW(inst),bh=baseH(inst);
+  const eL=inst.cropL||0,eR=inst.cropR||0,eT=inst.cropT||0,eB=inst.cropB||0;
+  const cw=Math.max(1,bw-eL-eR),ch=Math.max(1,bh-eT-eB);
+  const cx=Math.floor(nx/2)+(inst.cropOffX||0),cy=Math.floor(ny/2)+(inst.cropOffY||0);
+  const x0=cx-Math.floor(bw/2)+eL,y0=cy-Math.floor(bh/2)+eT;
+  const cropped=new Float32Array(cw*ch);
+  for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){
+    const sx=x0+x,sy=y0+y;
+    cropped[y*cw+x]=(sx>=0&&sx<nx&&sy>=0&&sy<ny)?raw[sy*nx+sx]:0;
+  }
+  if(!inst.rotate&&!inst.mirrorX&&!inst.mirrorY)return{data:cropped,w:cw,h:ch};
+  // Exact inverse of clsToCanvas's forward transform (translate(cw/2,ch/2) -> rotate -> scale(mx,my)
+  // -> drawImage at -cw/2,-ch/2): for output-relative-to-center offset (u,v), the source point is
+  // mx*R(-rot)(u,v).x, my*R(-rot)(u,v).y, relative to the source's own center.
+  const rot=(inst.rotate||0)*Math.PI/180,cosT=Math.cos(rot),sinT=Math.sin(rot);
+  const mx=inst.mirrorX?-1:1,my=inst.mirrorY?-1:1;
+  const ccx=cw/2,ccy=ch/2;
+  const out=new Float32Array(cw*ch);
+  for(let y=0;y<ch;y++){
+    const v=(y+0.5)-ccy;
+    for(let x=0;x<cw;x++){
+      const u=(x+0.5)-ccx;
+      const rx=u*cosT+v*sinT,ry=-u*sinT+v*cosT;
+      const sxf=rx*mx+ccx,syf=ry*my+ccy;
+      out[y*cw+x]=_biSampleF32(cropped,cw,ch,sxf,syf);
+    }
+  }
+  return{data:out,w:cw,h:ch};
+}
+
 function thumbDim(cls){const ar=cls.nx/cls.ny;let h=thumbH,w=Math.round(thumbH*ar);const maxW=Math.round(thumbH*2.5);if(w>maxW){w=maxW;h=Math.round(maxW/ar);}return{w,h};}
 function polFlipOf(classId){return pol.active&&pol.classFlip?!!pol.classFlip[classId]:false;}
 function dummyInst(classId){return{uid:0,classId,x:0,y:0,opacity:1,mirrorX:polFlipOf(classId),mirrorY:false,rotate:0,cropW:null,cropH:null,cropOffX:0,cropOffY:0,cropL:0,cropR:0,cropT:0,cropB:0};}
@@ -3239,18 +3678,26 @@ function thumbVisible(cls){
 // Per-class particle counts for the currently targeted CHEP stack, straight from
 // the loaded particle STAR (chep.clsId) - available as soon as a STAR + target
 // stack are set, independent of whether CHEP clustering has actually been run.
+// Particle counts per (global) class id, combined across EVERY stack that has its own linked
+// STAR (see linkStarToStack) - not just whichever one CHEP currently targets, so a class from
+// any stack gets a real count as soon as its own stack has a star linked.
 function classParticleCounts(){
-  if(!chep.clsId||!chep.targetStackId)return null;
-  const stack=getStack(chep.targetStackId);if(!stack)return null;
-  const nCls=Math.min(chep.nClsStar,stack.classCount);
   const counts={};
-  for(let i=0;i<chep.clsId.length;i++){
-    const c=chep.clsId[i]-1;
-    if(c<0||c>=nCls)continue;
-    const gid=stack.classIdStart+c;
-    counts[gid]=(counts[gid]||0)+1;
-  }
-  return counts;
+  let any=false;
+  stacks.forEach(stack=>{
+    if(!stack.star)return;
+    const matrix=buildChepMatrix(stack.star.var_,stack.star.data);
+    if(!matrix)return;
+    any=true;
+    const nCls=Math.min(matrix.nCls,stack.classCount);
+    for(let i=0;i<matrix.clsId.length;i++){
+      const c=matrix.clsId[i]-1;
+      if(c<0||c>=nCls)continue;
+      const gid=stack.classIdStart+c;
+      counts[gid]=(counts[gid]||0)+1;
+    }
+  });
+  return any?counts:null;
 }
 function reorderThumbs(){
   const area=document.getElementById('thumb-area');if(!area||!classes.length)return;
@@ -3351,10 +3798,16 @@ function pasteInstances(){
 }
 
 function hitTestROI(wx,wy){
-  if(!roi)return null;const hr=8/vpZ;
-  const corners=[{h:'nw',cx:roi.x,cy:roi.y},{h:'ne',cx:roi.x+roi.w,cy:roi.y},{h:'sw',cx:roi.x,cy:roi.y+roi.h},{h:'se',cx:roi.x+roi.w,cy:roi.y+roi.h}];
-  for(const c of corners)if(Math.abs(wx-c.cx)<hr&&Math.abs(wy-c.cy)<hr)return c.h;
-  if(wx>=roi.x&&wx<=roi.x+roi.w&&wy>=roi.y&&wy<=roi.y+roi.h)return 'move';return null;
+  if(!roi)return null;
+  const rh=roiRotHandleWorld();if(rh&&Math.hypot(wx-rh.x,wy-rh.y)<ROT_HR/vpZ)return 'rotate';
+  const hr=8/vpZ,rot=(roi.rot||0)*Math.PI/180,cosT=Math.cos(rot),sinT=Math.sin(rot);
+  const cxW=roi.x+roi.w/2,cyW=roi.y+roi.h/2,dx=wx-cxW,dy=wy-cyW;
+  // Inverse-rotate the mouse point into the ROI's own (unrotated) local frame, centered on the ROI.
+  const lx=dx*cosT+dy*sinT,ly=-dx*sinT+dy*cosT;
+  const hw=roi.w/2,hh=roi.h/2;
+  const corners=[{h:'nw',cx:-hw,cy:-hh},{h:'ne',cx:hw,cy:-hh},{h:'sw',cx:-hw,cy:hh},{h:'se',cx:hw,cy:hh}];
+  for(const c of corners)if(Math.abs(lx-c.cx)<hr&&Math.abs(ly-c.cy)<hr)return c.h;
+  if(lx>=-hw&&lx<=hw&&ly>=-hh&&ly<=hh)return 'move';return null;
 }
 function hitTest(wx,wy){
   const sx=wx*vpZ+vpX,sy=wy*vpZ+vpY;
@@ -3373,14 +3826,84 @@ function hitTest(wx,wy){
 }
 function cursorFor(h){if(!h||h==='move')return 'grab';if(h==='rotate')return 'crosshair';if(h==='n'||h==='s')return 'ns-resize';if(h==='e'||h==='w')return 'ew-resize';if(h==='nw'||h==='se')return 'nwse-resize';return 'nesw-resize';}
 
+// Visually previews the "Equal"/"Max" overlap modes on the canvas: for every pair of instances
+// whose (axis-aligned) footprints intersect, rebuild just that intersection from each
+// instance's OWN display-pipeline pixels (same colormap/contrast as everything else on the
+// canvas) and repaint it as the true weighted-average or per-pixel-max result, at full opacity
+// - so switching WEIGHTING actually changes what the overlap looks like, not just the offline
+// reconstruction. A 3+-way overlap is approximated pairwise (each pair processed independently,
+// later pairs painting over earlier ones) - a reasonable simplification for a live preview;
+// the real reconstruction (buildStitchedROIFast) already handles N-way overlap properly.
+function drawOverlapPreview(cmap){
+  const mode=overlapWeightMode;
+  for(let a=0;a<instances.length;a++){
+    const A=instances[a],clsA=getCls(A.classId);if(!clsA)continue;
+    const aw=iDispW(A),ah=iDispH(A);
+    for(let b=a+1;b<instances.length;b++){
+      const B=instances[b],clsB=getCls(B.classId);if(!clsB)continue;
+      const bw=iDispW(B),bh=iDispH(B);
+      const ox1=Math.max(A.x,B.x),oy1=Math.max(A.y,B.y);
+      const ox2=Math.min(A.x+aw,B.x+bw),oy2=Math.min(A.y+ah,B.y+bh);
+      if(ox2<=ox1||oy2<=oy1)continue;
+      const pw=Math.max(1,Math.round(ox2-ox1)),ph=Math.max(1,Math.round(oy2-oy1));
+
+      // Render each instance's own contribution to the overlap rect, at world/display
+      // resolution (native drawImage scaling - same resampling the normal instance draw uses).
+      const ccA=clsToCanvas(clsA,A,cmap),ccB=clsToCanvas(clsB,B,cmap);
+      const ta=document.createElement('canvas');ta.width=pw;ta.height=ph;const tax=ta.getContext('2d');
+      tax.drawImage(ccA,(ox1-A.x)/aw*ccA.width,(oy1-A.y)/ah*ccA.height,pw/aw*ccA.width,ph/ah*ccA.height,0,0,pw,ph);
+      const tb=document.createElement('canvas');tb.width=pw;tb.height=ph;const tbx=tb.getContext('2d');
+      tbx.drawImage(ccB,(ox1-B.x)/bw*ccB.width,(oy1-B.y)/bh*ccB.height,pw/bw*ccB.width,ph/bh*ccB.height,0,0,pw,ph);
+
+      const da=tax.getImageData(0,0,pw,ph).data,db=tbx.getImageData(0,0,pw,ph).data;
+      const outId=tax.createImageData(pw,ph);
+      for(let i=0;i<pw*ph;i++){
+        const i4=i*4;
+        if(mode==='max'){
+          outId.data[i4]=Math.max(da[i4],db[i4]);outId.data[i4+1]=Math.max(da[i4+1],db[i4+1]);outId.data[i4+2]=Math.max(da[i4+2],db[i4+2]);
+        }else{
+          outId.data[i4]=(da[i4]+db[i4])*0.5;outId.data[i4+1]=(da[i4+1]+db[i4+1])*0.5;outId.data[i4+2]=(da[i4+2]+db[i4+2])*0.5;
+        }
+        outId.data[i4+3]=255;
+      }
+      tax.putImageData(outId,0,0);
+
+      const sx=ox1*vpZ+vpX,sy=oy1*vpZ+vpY,sw=(ox2-ox1)*vpZ,sh=(oy2-oy1)*vpZ;
+      CX.drawImage(ta,sx,sy,sw,sh);
+    }
+  }
+}
+
 function _doRender(){
   _rafPending=false;CX.clearRect(0,0,MC.width,MC.height);const cmap=getCmap();
-  instances.forEach(inst=>{
+  instances.forEach((inst,idx)=>{
     const cls=getCls(inst.classId);if(!cls)return;
     const w=iDispW(inst),h=iDispH(inst);const sx=inst.x*vpZ+vpX,sy=inst.y*vpZ+vpY,dsw=w*vpZ,dsh=h*vpZ;
     const cc=clsToCanvas(cls,inst,cmap);
-    CX.save();CX.globalAlpha=inst.opacity;CX.drawImage(cc,sx,sy,dsw,dsh);
+    CX.save();
+    if(overlapWeightMode==='top'){
+      // "Top" overlap mode means the front-most (later-drawn) class is the true value in an
+      // overlap - reflect that on the canvas too, not just in the reconstruction: subtract the
+      // footprint of every LATER (frontward) overlapping instance from THIS instance's clip
+      // region, one at a time via clip() intersection. Doing it one rect at a time (rather than
+      // one path with several holes) stays correct even when multiple later instances overlap
+      // each other, not just this one.
+      CX.beginPath();CX.rect(sx,sy,dsw,dsh);CX.clip();
+      for(let j=idx+1;j<instances.length;j++){
+        const other=instances[j];
+        const ow=iDispW(other),oh=iDispH(other);
+        if(inst.x>=other.x+ow||inst.x+w<=other.x||inst.y>=other.y+oh||inst.y+h<=other.y)continue;
+        const osx=other.x*vpZ+vpX,osy=other.y*vpZ+vpY,odsw=ow*vpZ,odsh=oh*vpZ;
+        CX.beginPath();CX.rect(0,0,MC.width,MC.height);CX.rect(osx,osy,odsw,odsh);CX.clip('evenodd');
+      }
+    }
+    CX.globalAlpha=inst.opacity;CX.drawImage(cc,sx,sy,dsw,dsh);
     const col=stackColor(cls);CX.fillStyle=col;CX.fillRect(sx,sy,dsw,BAR_H);CX.fillRect(sx,sy+dsh-BAR_H,dsw,BAR_H);CX.globalAlpha=1;
+    CX.restore();
+    // A/B measurement markers and the selection highlight/handles are editing affordances, not
+    // "data" - drawn unclipped (in a fresh save scope) so they stay usable even where an
+    // instance is occluded above.
+    CX.save();
     const isA=inst.uid===markedUids[0],isB=inst.uid===markedUids[1];
     if(isA||isB){const mc=isA?'#7dc0f0':'#f0a0b0';CX.strokeStyle=mc;CX.lineWidth=2.5;CX.setLineDash([4,3]);CX.strokeRect(sx+1.5,sy+1.5,dsw-3,dsh-3);CX.setLineDash([]);CX.fillStyle=mc;CX.font=`bold ${Math.max(9,11*vpZ)}px "IBM Plex Mono"`;CX.fillText(isA?'A':'B',sx+dsw-Math.max(12,13*vpZ),sy+Math.max(11,13*vpZ)+BAR_H);}
     if(inst.uid===selUid){
@@ -3407,14 +3930,50 @@ function _doRender(){
     CX.fillStyle=`rgba(255,255,255,${Math.min(.8,inst.opacity)})`;CX.font=`${Math.max(7,9*vpZ)}px "IBM Plex Mono"`;CX.fillText(`${cls.id+1}`,sx+3,sy+BAR_H+Math.max(9,11*vpZ));
   });
 
+  // "Equal"/"Max" overlap modes have no natural z-order-compositing equivalent (unlike "Top",
+  // handled above via clipping) - repaint each overlapping instance PAIR's intersection with
+  // the actual weighted-average / per-pixel-max result, so the canvas shows what the mode will
+  // really produce instead of just whichever instance happens to be drawn last.
+  if(overlapWeightMode==='equal'||overlapWeightMode==='max')drawOverlapPreview(cmap);
+
   if(roi){
-    const rx=roi.x*vpZ+vpX,ry=roi.y*vpZ+vpY,rw=roi.w*vpZ,rh=roi.h*vpZ;
-    CX.save();CX.fillStyle='rgba(0,0,0,.32)';CX.fillRect(0,0,MC.width,ry);CX.fillRect(0,ry+rh,MC.width,MC.height-ry-rh);CX.fillRect(0,ry,rx,rh);CX.fillRect(rx+rw,ry,MC.width-rx-rw,rh);
-    CX.strokeStyle='#DB9D47';CX.lineWidth=1.5;CX.setLineDash([5,3]);CX.strokeRect(rx,ry,rw,rh);CX.setLineDash([]);
-    const cxr=rx+rw/2,cyr=ry+rh/2;CX.strokeStyle='rgba(219,157,71,.55)';CX.lineWidth=1;CX.setLineDash([3,2]);CX.beginPath();CX.moveTo(cxr,ry);CX.lineTo(cxr,ry+rh);CX.stroke();CX.beginPath();CX.moveTo(rx,cyr);CX.lineTo(rx+rw,cyr);CX.stroke();CX.setLineDash([]);
-    const hs=8;[[0,0],[1,0],[0,1],[1,1]].forEach(([ox2,oy2])=>{const hx=rx+ox2*rw-hs/2,hy=ry+oy2*rh-hs/2;CX.fillStyle='#DB9D47';CX.fillRect(hx,hy,hs,hs);CX.strokeStyle='rgba(0,0,0,.6)';CX.lineWidth=.5;CX.strokeRect(hx,hy,hs,hs);});
-    CX.fillStyle='rgba(219,157,71,.75)';CX.font='9px "IBM Plex Mono"';CX.fillText('helix ->',rx+6,cyr-3);
-    CX.fillStyle='rgba(219,157,71,.9)';CX.font='10px "IBM Plex Mono"';CX.fillText(`${Math.round(roi.w)}x${Math.round(roi.h)}`,rx+4,ry+12);
+    const rotDeg=roi.rot||0,rot=rotDeg*Math.PI/180;
+    const cxW=roi.x+roi.w/2,cyW=roi.y+roi.h/2,scx=cxW*vpZ+vpX,scy=cyW*vpZ+vpY;
+    const hw=roi.w/2*vpZ,hh=roi.h/2*vpZ;
+    CX.save();
+    // Darken everything outside the ROI, leaving the inside untouched. A single fillRect
+    // over everything followed by destination-out on the ROI does NOT work here: by the time
+    // destination-out runs, the canvas buffer within the ROI is already the darkened
+    // (blended) result, so erasing it reveals the transparent canvas backdrop (black) instead
+    // of restoring the original bright pixels underneath. Instead, build ONE path - the whole
+    // canvas as the outer boundary, the rotated ROI rect as an inner "hole" - and fill it once
+    // with the evenodd rule, so the inside is never painted over at all.
+    const cosT=Math.cos(rot),sinT=Math.sin(rot);
+    const corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].map(([lx,ly])=>[scx+lx*cosT-ly*sinT,scy+lx*sinT+ly*cosT]);
+    CX.beginPath();
+    CX.rect(0,0,MC.width,MC.height);
+    CX.moveTo(corners[0][0],corners[0][1]);
+    CX.lineTo(corners[1][0],corners[1][1]);
+    CX.lineTo(corners[2][0],corners[2][1]);
+    CX.lineTo(corners[3][0],corners[3][1]);
+    CX.closePath();
+    CX.fillStyle='rgba(0,0,0,.32)';
+    CX.fill('evenodd');
+    // Border, crosshair guides and labels, drawn in the ROI's own rotated frame.
+    CX.save();CX.translate(scx,scy);CX.rotate(rot);
+    CX.strokeStyle='#DB9D47';CX.lineWidth=1.5;CX.setLineDash([5,3]);CX.strokeRect(-hw,-hh,hw*2,hh*2);CX.setLineDash([]);
+    CX.strokeStyle='rgba(219,157,71,.55)';CX.lineWidth=1;CX.setLineDash([3,2]);
+    CX.beginPath();CX.moveTo(0,-hh);CX.lineTo(0,hh);CX.stroke();
+    CX.beginPath();CX.moveTo(-hw,0);CX.lineTo(hw,0);CX.stroke();CX.setLineDash([]);
+    const hs=8;[[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]].forEach(([hx,hy])=>{CX.fillStyle='#DB9D47';CX.fillRect(hx-hs/2,hy-hs/2,hs,hs);CX.strokeStyle='rgba(0,0,0,.6)';CX.lineWidth=.5;CX.strokeRect(hx-hs/2,hy-hs/2,hs,hs);});
+    CX.fillStyle='rgba(219,157,71,.75)';CX.font='9px "IBM Plex Mono"';CX.fillText('helix ->',-hw+6,-3);
+    CX.fillStyle='rgba(219,157,71,.9)';CX.font='10px "IBM Plex Mono"';CX.fillText(`${Math.round(roi.w)}x${Math.round(roi.h)}`,-hw+4,-hh+12);
+    CX.restore();
+    // Rotation handle, in plain screen space (mirrors the per-instance rotate handle style).
+    const rh2=roiRotHandleScreen();
+    CX.strokeStyle='rgba(219,157,71,.5)';CX.lineWidth=1;CX.setLineDash([3,2]);CX.beginPath();CX.moveTo(scx,scy);CX.lineTo(rh2.x,rh2.y);CX.stroke();CX.setLineDash([]);
+    CX.fillStyle='#DB9D47';CX.beginPath();CX.arc(rh2.x,rh2.y,ROT_HR/1.5,0,Math.PI*2);CX.fill();
+    CX.fillStyle='#000';CX.font='bold 8px sans-serif';CX.textAlign='center';CX.textBaseline='middle';CX.fillText('R',rh2.x,rh2.y);CX.textAlign='left';CX.textBaseline='alphabetic';
     CX.restore();
   }
   if(roiDraw&&roiSt){const cur=roiSt._c||roiSt;const rx=Math.min(roiSt.x,cur.x)*vpZ+vpX,ry=Math.min(roiSt.y,cur.y)*vpZ+vpY;CX.save();CX.strokeStyle='#DB9D47';CX.lineWidth=1.5;CX.setLineDash([5,3]);CX.strokeRect(rx,ry,Math.abs(cur.x-roiSt.x)*vpZ,Math.abs(cur.y-roiSt.y)*vpZ);CX.setLineDash([]);CX.restore();}
@@ -3441,7 +4000,7 @@ function onMD(e){
       else{drag={type:'boxsel',sx:w.x,sy:w.y,_cur:{x:w.x,y:w.y}};}
       return;
     }
-    if(roi){const rh=hitTestROI(w.x,w.y);if(rh){pushUndo();roiDragType=rh;roiDragStart={x:w.x,y:w.y,roi:{...roi}};MC.style.cursor=rh==='move'?'move':rh==='nw'||rh==='se'?'nwse-resize':'nesw-resize';return;}}
+    if(roi){const rh=hitTestROI(w.x,w.y);if(rh){pushUndo();roiDragType=rh;roiDragStart={x:w.x,y:w.y,roi:{...roi}};MC.style.cursor=cursorFor(rh);return;}}
     const hit=hitTest(w.x,w.y);
     if(hit){const inst=getInst(hit.uid);selectInst(hit.uid);render();instances=[...instances.filter(i=>i.uid!==hit.uid),inst];
       if(hit.handle==='move'){pushUndo();drag={type:'move',uid:hit.uid,ssx:pos.x,ssy:pos.y,ix:inst.x,iy:inst.y};}
@@ -3455,16 +4014,31 @@ function onMM(e){
   document.getElementById('sb-x').textContent=w.x.toFixed(1);document.getElementById('sb-y').textContent=w.y.toFixed(1);
   if(roiDragType&&roiDragStart){
     const dx=w.x-roiDragStart.x,dy=w.y-roiDragStart.y,r0=roiDragStart.roi;
-    if(roiDragType==='move'){roi={x:r0.x+dx,y:r0.y+dy,w:r0.w,h:r0.h};}
-    else if(roiDragType==='se'){roi={x:r0.x,y:r0.y,w:Math.max(4,r0.w+dx),h:Math.max(4,r0.h+dy)};}
-    else if(roiDragType==='sw'){const nw=Math.max(4,r0.w-dx);roi={x:r0.x+r0.w-nw,y:r0.y,w:nw,h:Math.max(4,r0.h+dy)};}
-    else if(roiDragType==='ne'){const nh=Math.max(4,r0.h-dy);roi={x:r0.x,y:r0.y+r0.h-nh,w:Math.max(4,r0.w+dx),h:nh};}
-    else if(roiDragType==='nw'){const nw=Math.max(4,r0.w-dx),nh=Math.max(4,r0.h-dy);roi={x:r0.x+r0.w-nw,y:r0.y+r0.h-nh,w:nw,h:nh};}
+    const rot0=(r0.rot||0)*Math.PI/180,cxW0=r0.x+r0.w/2,cyW0=r0.y+r0.h/2;
+    if(roiDragType==='move'){roi={x:r0.x+dx,y:r0.y+dy,w:r0.w,h:r0.h,rot:r0.rot||0};}
+    else if(roiDragType==='rotate'){
+      const ang=Math.atan2(w.y-cyW0,w.x-cxW0)*180/Math.PI+90;
+      roi={x:r0.x,y:r0.y,w:r0.w,h:r0.h,rot:Math.round(ang)};
+    }else{
+      // Corner resize in the ROI's own (possibly rotated) frame: project the mouse into the
+      // local axes fixed at drag-start, then keep the OPPOSITE corner anchored in world space
+      // (matching how the axis-aligned case always kept the opposite corner's x/y unchanged).
+      const cosT=Math.cos(rot0),sinT=Math.sin(rot0);
+      const ex={x:cosT,y:sinT},ey={x:-sinT,y:cosT};                 // local +x/+y axes, in world
+      const mdx=w.x-cxW0,mdy=w.y-cyW0;
+      const mlx=mdx*ex.x+mdy*ex.y,mly=mdx*ey.x+mdy*ey.y;             // mouse, projected into local axes
+      const half={nw:{x:-r0.w/2,y:-r0.h/2},ne:{x:r0.w/2,y:-r0.h/2},sw:{x:-r0.w/2,y:r0.h/2},se:{x:r0.w/2,y:r0.h/2}};
+      const anchor={nw:half.se,ne:half.sw,sw:half.ne,se:half.nw}[roiDragType];
+      const newW=Math.max(4,Math.abs(mlx-anchor.x)),newH=Math.max(4,Math.abs(mly-anchor.y));
+      const ccx=(mlx+anchor.x)/2,ccy=(mly+anchor.y)/2;               // new center, in the OLD local axes
+      const newCxW=cxW0+ccx*ex.x+ccy*ey.x,newCyW=cyW0+ccx*ex.y+ccy*ey.y;
+      roi={x:newCxW-newW/2,y:newCyW-newH/2,w:newW,h:newH,rot:r0.rot||0};
+    }
     syncROICtrl();updROIBadge();render();return;
   }
   if(drag&&drag.type==='boxsel'){drag._cur=w;render();return;}
   if(!drag&&tool==='select'){
-    if(roi){const rh=hitTestROI(w.x,w.y);if(rh){MC.style.cursor=rh==='move'?'move':rh==='nw'||rh==='se'?'nwse-resize':'nesw-resize';return;}}
+    if(roi){const rh=hitTestROI(w.x,w.y);if(rh){MC.style.cursor=cursorFor(rh);return;}}
     const hit=hitTest(w.x,w.y);MC.style.cursor=hit?cursorFor(hit.handle):'default';
   }
   if(measuring&&msA){msB=w;render();updMeas();return;}
@@ -3516,7 +4090,7 @@ function onMU(e){
   if(roiDraw&&roiSt){
     const pos=mcp(e),w=s2w(pos.x,pos.y);const x=Math.min(roiSt.x,w.x),y=Math.min(roiSt.y,w.y);
     const ww=Math.abs(w.x-roiSt.x),hh=Math.abs(w.y-roiSt.y);
-    if(ww>5&&hh>5){roi={x,y,w:ww,h:hh};updROIBadge();syncROICtrl();}
+    if(ww>5&&hh>5){roi={x,y,w:ww,h:hh,rot:0};updROIBadge();syncROICtrl();}
     roiDraw=false;roiSt=null;render();if(roi)document.getElementById('roi-ctrl').classList.add('vis');return;
   }
   drag=null;MC.style.cursor='default';
@@ -3539,8 +4113,8 @@ function onKey(e){
   if((k==='Delete'||k==='Backspace')&&selUid!==null)removeSelected();
 }
 
-function syncROICtrl(){if(!roi)return;document.getElementById('roi-cx').value=Math.round(roi.x+roi.w/2);document.getElementById('roi-cy').value=Math.round(roi.y+roi.h/2);document.getElementById('roi-rw').value=Math.round(roi.w);document.getElementById('roi-rh').value=Math.round(roi.h);document.getElementById('roi-inf').textContent=`${Math.round(roi.w)}x${Math.round(roi.h)}`;}
-function applyROICtrl(){const cx=+document.getElementById('roi-cx').value,cy=+document.getElementById('roi-cy').value;const rw=Math.max(4,+document.getElementById('roi-rw').value||10),rh=Math.max(4,+document.getElementById('roi-rh').value||10);roi={x:cx-rw/2,y:cy-rh/2,w:rw,h:rh};updROIBadge();render();}
+function syncROICtrl(){if(!roi)return;document.getElementById('roi-cx').value=Math.round(roi.x+roi.w/2);document.getElementById('roi-cy').value=Math.round(roi.y+roi.h/2);document.getElementById('roi-rw').value=Math.round(roi.w);document.getElementById('roi-rh').value=Math.round(roi.h);const rot=roi.rot||0;document.getElementById('roi-rot').value=rot;document.getElementById('roi-rot-slider').value=rot;document.getElementById('roi-inf').textContent=`${Math.round(roi.w)}x${Math.round(roi.h)}`;const xr=document.getElementById('xs-roi-rot');if(xr)xr.value=rot;}
+function applyROICtrl(){const cx=+document.getElementById('roi-cx').value,cy=+document.getElementById('roi-cy').value;const rw=Math.max(4,+document.getElementById('roi-rw').value||10),rh=Math.max(4,+document.getElementById('roi-rh').value||10);const rot=+document.getElementById('roi-rot').value||0;document.getElementById('roi-rot-slider').value=rot;roi={x:cx-rw/2,y:cy-rh/2,w:rw,h:rh,rot};updROIBadge();render();}
 function snapROIToContent(){
   if(!roi){if(!instances.length)return;let sy=0,n=0;instances.forEach(inst=>{sy+=instCY(inst);n++;});roi={x:roi?.x??0,y:sy/n-40,w:roi?.w??120,h:roi?.h??80};syncROICtrl();updROIBadge();render();return;}
   const rW=Math.round(roi.w),rH=Math.round(roi.h);if(rW<2||rH<2)return;
@@ -3550,7 +4124,7 @@ function snapROIToContent(){
   const ctx=sc.getContext('2d');const id=ctx.getImageData(sx,sy,sw,sh);
   const rowProfile=new Float64Array(sh);for(let y=0;y<sh;y++){let s=0;for(let x=0;x<sw;x++)s+=id.data[(y*sw+x)*4];rowProfile[y]=s/sw;}
   let wSum=0,posSum=0;for(let y=0;y<sh;y++){const w=Math.max(0,rowProfile[y]);wSum+=w;posSum+=y*w;}
-  if(wSum<1e-6)return;roi={x:roi.x,y:originY+sy+posSum/wSum-rH/2,w:roi.w,h:roi.h};
+  if(wSum<1e-6)return;roi={x:roi.x,y:originY+sy+posSum/wSum-rH/2,w:roi.w,h:roi.h,rot:roi.rot||0};
   syncROICtrl();updROIBadge();render();
 }
 function snapROIToCanvas(){const cx=s2w(MC.width/2,MC.height/2);if(!roi)roi={x:0,y:0,w:100,h:60};roi.x=cx.x-roi.w/2;roi.y=cx.y-roi.h/2;syncROICtrl();updROIBadge();render();}
@@ -3705,9 +4279,9 @@ function saveState(){
   const polState=pol.classFlip?{starName:pol.starName,active:pol.active,minShared:pol.minShared,objective:pol.objective,
     classFlip:pol.classFlip,presentCount:pol.presentClasses?pol.presentClasses.length:Object.keys(pol.classFlip).length}:null;
   const gv=id=>document.getElementById(id);
-  const helixParams={co:+gv('stitch-co').value||150,opt:gv('stitch-opt').checked,flip:gv('stitch-flip').checked,ymode:gv('stitch-ymode').value,fade:+gv('stitch-fade').value||20,niter:+gv('stitch-niter').value||5,sx:+gv('stitch-sx').value||15,sy:+gv('stitch-sy').value||8,overlapWeight:overlapWeightMode};
+  const helixParams={co:+gv('stitch-co').value||150,opt:gv('stitch-opt').checked,flip:gv('stitch-flip').checked,ymode:gv('stitch-ymode').value,fade:+gv('stitch-fade').value||20,niter:+gv('stitch-niter').value||5,sx:+gv('stitch-sx').value||15,sy:+gv('stitch-sy').value||8,overlapWeight:overlapWeightMode,overlapCount:overlapUseCount,overlapDist:overlapUseDist,overlapDistPow:overlapDistPow};
   const alignParams={tr:+gv('al-tr').value||20,ts:+gv('al-ts').value||2,rr:+gv('al-rr').value||15,rs:+gv('al-rs').value||3};
-  const state={version:8,savedAt:new Date().toISOString(),classCount:classes.length,pixelSize:+gv('px-inp').value||1,displayScale:+gv('dscale').value,thumbH,cMode,cMin,cMax,cManLo,cManHi,cGamma,cBright,inverted,colormap:gv('colormap').value,helix:helixParams,align:alignParams,stacks:stacks.map(s=>({...s})),instances:instances.map(i=>({...i})),markedUids:[...markedUids],multiSel:[...multiSel],roi:roi?{...roi}:null,chep:chepState,pol:polState};
+  const state={version:8,savedAt:new Date().toISOString(),classCount:classes.length,pixelSize:+gv('px-inp').value||1,displayScale:+gv('dscale').value,thumbH,cMode,cMin,cMax,cManLo,cManHi,cGamma,cBright,inverted,colormap:gv('colormap').value,helix:helixParams,align:alignParams,stacks:stacks.map(({star,...s})=>s),instances:instances.map(i=>({...i})),markedUids:[...markedUids],multiSel:[...multiSel],roi:roi?{...roi}:null,chep:chepState,pol:polState};
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='stitcher_state.json';a.click();URL.revokeObjectURL(url);
 }
 function loadStateFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{applyState(JSON.parse(ev.target.result));}catch(err){alert('Parse error: '+err.message);}};r.readAsText(f);e.target.value='';}
@@ -3730,7 +4304,14 @@ function applyState(state){
     document.getElementById('stitch-flip').checked=h.flip??true;document.getElementById('stitch-ymode').value=h.ymode||'center';
     document.getElementById('stitch-fade').value=h.fade??20;document.getElementById('stitch-niter').value=h.niter??5;
     document.getElementById('stitch-sx').value=h.sx??15;document.getElementById('stitch-sy').value=h.sy??8;
-    setOverlapMode(h.overlapWeight||'equal');}
+    // Old sessions stored 'count' as a 4th exclusive mode; it's now the overlapUseCount factor
+    // under 'equal' instead, so map it forward rather than silently losing the setting.
+    const ow=h.overlapWeight||'equal';
+    overlapWeightMode=ow==='count'?'equal':ow;
+    overlapUseCount=ow==='count'?true:!!h.overlapCount;
+    overlapUseDist=!!h.overlapDist;
+    overlapDistPow=h.overlapDistPow||1;
+    refreshOverlapUI();}
   if(state.align){const a=state.align;
     document.getElementById('al-tr').value=a.tr??20;document.getElementById('al-ts').value=a.ts??2;
     document.getElementById('al-rr').value=a.rr??15;document.getElementById('al-rs').value=a.rs??3;}
@@ -3798,27 +4379,95 @@ function renderScene(){
   instances.forEach(inst=>{const cls=getCls(inst.classId);if(!cls)return;const cc=clsToCanvas(cls,inst,CMAPS.gray);ox.save();ox.globalAlpha=inst.opacity;ox.drawImage(cc,inst.x-mix,inst.y-miy,iDispW(inst),iDispH(inst));ox.restore();});
   return{canvas:oc,ox:mix,oy:miy};
 }
-function captureROI(){if(!roi)return null;const scene=renderScene();if(!scene)return null;const{canvas:sc,ox,oy}=scene;const px=Math.round(roi.x-ox),py=Math.round(roi.y-oy);const sx=Math.max(0,px),sy=Math.max(0,py);const sw=Math.min(Math.round(roi.w),sc.width-sx),sh=Math.min(Math.round(roi.h),sc.height-sy);if(sw<=0||sh<=0)return null;const pc=document.createElement('canvas');pc.width=sw;pc.height=sh;pc.getContext('2d').drawImage(sc,sx,sy,sw,sh,0,0,sw,sh);return pc;}
+// Bilinear sample of an RGBA byte buffer at a continuous (x,y), where pixel (i,j) covers
+// [i,i+1)x[j,j+1) - i.e. x=1.5,y=1.5 lands exactly on pixel (1,1)'s center. Out-of-range
+// coordinates clamp to the nearest edge pixel (matches canvas edge-extend behaviour).
+function _biSample(data,w,h,x,y,nch){
+  const fx=x-0.5,fy=y-0.5,x0=Math.floor(fx),y0=Math.floor(fy),tx=fx-x0,ty=fy-y0;
+  const cx0=Math.max(0,Math.min(w-1,x0)),cx1=Math.max(0,Math.min(w-1,x0+1));
+  const cy0=Math.max(0,Math.min(h-1,y0)),cy1=Math.max(0,Math.min(h-1,y0+1));
+  const i00=(cy0*w+cx0)*4,i10=(cy0*w+cx1)*4,i01=(cy1*w+cx0)*4,i11=(cy1*w+cx1)*4;
+  const out=new Array(nch);
+  for(let c=0;c<nch;c++)out[c]=data[i00+c]*(1-tx)*(1-ty)+data[i10+c]*tx*(1-ty)+data[i01+c]*(1-tx)*ty+data[i11+c]*tx*ty;
+  return out;
+}
+// Radial falloff from the center of a class average's own (display) box: 1.0 exactly at the
+// box center, decaying smoothly to 0 at the box's corner distance. `pow` shapes the falloff -
+// 1 = linear w.r.t. normalized radius, >1 = concentrated near the center, <1 = gentler/broader.
+function distCenterWeight(lx,ly,iW,iH,pow){
+  const cx=iW/2,cy=iH/2,maxR=Math.hypot(cx,cy)||1;
+  const r=Math.min(1,Math.hypot(lx-cx,ly-cy)/maxR);
+  return Math.pow(1-r,Math.max(0.05,pow));
+}
+function captureROI(){
+  if(!roi)return null;
+  const scene=renderScene();if(!scene)return null;
+  const{canvas:sc,ox,oy}=scene;
+  const rW=Math.round(roi.w),rH=Math.round(roi.h);if(rW<=0||rH<=0)return null;
+  const rot=(roi.rot||0)*Math.PI/180;
+  if(Math.abs(rot)<1e-9){
+    const px=Math.round(roi.x-ox),py=Math.round(roi.y-oy);const sx=Math.max(0,px),sy=Math.max(0,py);
+    const sw=Math.min(rW,sc.width-sx),sh=Math.min(rH,sc.height-sy);if(sw<=0||sh<=0)return null;
+    const pc=document.createElement('canvas');pc.width=sw;pc.height=sh;pc.getContext('2d').drawImage(sc,sx,sy,sw,sh,0,0,sw,sh);return pc;
+  }
+  // Rotated ROI: bilinear-resample the flattened scene instead of a plain axis-aligned crop, so
+  // the exported image/sinogram data stays smooth rather than aliased from nearest-neighbor sampling.
+  const sdata=sc.getContext('2d').getImageData(0,0,sc.width,sc.height).data;
+  const cosT=Math.cos(rot),sinT=Math.sin(rot);
+  const cxS=roi.x+rW/2-ox,cyS=roi.y+rH/2-oy;   // ROI center, in scene-canvas pixel coords
+  const pc=document.createElement('canvas');pc.width=rW;pc.height=rH;
+  const pctx=pc.getContext('2d');const outId=pctx.createImageData(rW,rH);
+  for(let ly=0;ly<rH;ly++){
+    const v=(ly+0.5)-rH/2;
+    for(let lx=0;lx<rW;lx++){
+      const u=(lx+0.5)-rW/2;
+      const sx=cxS+u*cosT-v*sinT,sy=cyS+u*sinT+v*cosT;
+      const[r,g,b]=_biSample(sdata,sc.width,sc.height,sx,sy,3);
+      const oi=(ly*rW+lx)*4;outId.data[oi]=r;outId.data[oi+1]=g;outId.data[oi+2]=b;outId.data[oi+3]=255;
+    }
+  }
+  pctx.putImageData(outId,0,0);return pc;
+}
 
 // Single source of truth for the overlap weighting; mirrors the toggle in the stitch
 // panel AND the one in the cross-section modal, and recomputes if the modal is open.
-function setOverlapMode(m){
-  overlapWeightMode=m;
-  const set=(id,on)=>{const el=document.getElementById(id);if(!el)return;el.style.background=on?'var(--navy)':'var(--pan3)';el.style.color=on?'#ddf':'var(--txt-d)';};
-  set('ow-equal-btn',m==='equal');set('ow-top-btn',m==='top');set('ow-count-btn',m==='count');
-  set('xs-ow-equal-btn',m==='equal');set('xs-ow-top-btn',m==='top');set('xs-ow-count-btn',m==='count');
-  if(document.getElementById('xs-modal').classList.contains('vis')&&instances.length&&roi)runRadon();
+// Overlap-weighting UI is duplicated in three places (stitch panel, xs reconstruction modal,
+// canvas toolbar) so it's reachable wherever the user happens to be working; refreshOverlapUI
+// keeps all three in sync with the single source of truth (overlapWeightMode/overlapUseCount/
+// overlapUseDist/overlapDistPow) regardless of which copy was just interacted with.
+function refreshOverlapUI(){
+  const setBtn=(id,on)=>{const el=document.getElementById(id);if(!el)return;el.style.background=on?'var(--navy)':'var(--pan3)';el.style.color=on?'#ddf':'var(--txt-d)';};
+  const m=overlapWeightMode,isEqual=m==='equal';
+  ['','xs-','ctb-'].forEach(p=>{
+    setBtn(`${p}ow-equal-btn`,m==='equal');setBtn(`${p}ow-top-btn`,m==='top');setBtn(`${p}ow-max-btn`,m==='max');
+    const ck=document.getElementById(`${p}ow-count-ck`);if(ck){ck.checked=overlapUseCount;ck.disabled=!isEqual;}
+    const dk=document.getElementById(`${p}ow-dist-ck`);if(dk){dk.checked=overlapUseDist;dk.disabled=!isEqual;}
+    const dp=document.getElementById(`${p}ow-distpow`);if(dp){dp.value=overlapDistPow;dp.disabled=!isEqual||!overlapUseDist;}
+    const lc=document.getElementById(`${p}ow-count-lbl`);if(lc)lc.style.opacity=isEqual?1:.4;
+    const ld=document.getElementById(`${p}ow-dist-lbl`);if(ld)ld.style.opacity=isEqual?1:.4;
+  });
 }
+function _overlapRerunIfOpen(){if(document.getElementById('xs-modal').classList.contains('vis')&&instances.length&&roi)runRadon();}
+function setOverlapMode(m){overlapWeightMode=m;refreshOverlapUI();_overlapRerunIfOpen();}
+function toggleOverlapCount(on){overlapUseCount=!!on;refreshOverlapUI();_overlapRerunIfOpen();}
+function toggleOverlapDist(on){overlapUseDist=!!on;refreshOverlapUI();_overlapRerunIfOpen();}
+function setOverlapDistPow(v){overlapDistPow=Math.max(0.05,+v||1);refreshOverlapUI();_overlapRerunIfOpen();}
 
-// buildStitchedROIFast — assembles the ROI into the stitched sinogram, combining
-// OVERLAPPING class averages by one of three modes (WEIGHTING toggle):
-//   'equal' - soft-edge weighted average, all classes equal (the sl_assemble.py
-//             distance_transform_edt soft-mask behaviour).
-//   'count' - soft-edge weighted average, each class scaled by its particle count
-//             (from the loaded CHEP STAR), so abundant azimuthal views dominate.
-//   'top'   - front-most (last-drawn) class wins in overlaps, over-composited with
-//             the same cosine taper as a soft feather.
-// In every mode a cosine taper falls to zero at each class's edges to avoid seams.
+// buildStitchedROIFast — assembles the ROI into the stitched sinogram, combining OVERLAPPING
+// class averages by one of three blend strategies (WEIGHTING toggle):
+//   'equal' - soft-edge weighted average (the sl_assemble.py distance_transform_edt soft-mask
+//             behaviour). Two independent, combinable weight factors can be layered in:
+//               overlapUseCount - scale by each class's particle count (from the loaded CHEP
+//                                 STAR), so abundant azimuthal views dominate.
+//               overlapUseDist  - scale by distance from the class average's own box center
+//                                 (distCenterWeight), so the middle of each class average is
+//                                 trusted more than its periphery.
+//   'top'   - front-most (last-drawn) class wins in overlaps, over-composited with the same
+//             cosine taper as a soft feather (unaffected by the count/dist weight factors).
+//   'max'   - literal per-pixel maximum raw value across every overlapping class (order- and
+//             weight-independent).
+// In 'equal'/'top' a cosine taper falls to zero at each class's edges to avoid seams; 'max'
+// picks the winning value directly since there's nothing to blend.
 function buildStitchedROIFast(){
   if(!roi)return null;
   const rW=Math.round(roi.w),rH=Math.round(roi.h);
@@ -3826,12 +4475,16 @@ function buildStitchedROIFast(){
 
   const fadePct=(+document.getElementById('stitch-fade')?.value||20)/100;
   const mode=overlapWeightMode;
-  const pc=mode==='count'?classParticleCounts():null;   // global class id -> particle count
-  // 'equal'/'count' accumulate a weighted average; 'top' over-composites into `out`.
+  const useCount=mode==='equal'&&overlapUseCount,useDist=mode==='equal'&&overlapUseDist,distPow=overlapDistPow;
+  const pc=useCount?classParticleCounts():null;   // global class id -> particle count
+  const rot=(roi.rot||0)*Math.PI/180;
+  // 'equal' accumulates a weighted average; 'top'/'max' write final values directly into `out`.
   const acc=new Float32Array(rW*rH);
   const cnt=new Float32Array(rW*rH);
   const out=new Float32Array(rW*rH);
+  if(mode==='max')out.fill(-Infinity);
 
+  if(Math.abs(rot)<1e-9){
   // Instances are iterated in array order = back-to-front, which 'top' relies on.
   instances.forEach(inst=>{
     const cls=getCls(inst.classId);if(!cls)return;
@@ -3842,15 +4495,12 @@ function buildStitchedROIFast(){
     const ox2=Math.min(roi.x+rW,inst.x+iW),oy2=Math.min(roi.y+rH,inst.y+iH);
     if(ox2<=ox1||oy2<=oy1)return;
 
-    // Per-class multiplier for weighted-average modes (1 unless 'count').
-    const pcw=mode==='count'?Math.max(1e-6,(pc&&pc[cls.id])||1):1;
+    // Per-class multiplier for the weighted-average mode (1 unless overlapUseCount).
+    const pcw=useCount?Math.max(1e-6,(pc&&pc[cls.id])||1):1;
 
-    // Render instance to a temp ROI-sized canvas at display scale
-    const cc=clsToCanvas(cls,{...inst,opacity:1},CMAPS.gray);
-    const tc=document.createElement('canvas');tc.width=rW;tc.height=rH;
-    const tx=tc.getContext('2d');
-    tx.drawImage(cc,(inst.x-roi.x),(inst.y-roi.y),iW,iH);
-    const id=tx.getImageData(0,0,rW,rH).data;
+    // Sample the class's own raw float data directly (full precision - no per-class contrast
+    // auto-windowing, no colormap LUT, no 8-bit quantization, no canvas-scaling resample).
+    const{data:fdata,w:nW,h:nH}=clsToFloat(cls,{...inst,opacity:1});
 
     // Fade widths in display pixels (applied at left/right and top/bottom edges)
     const fadeX=Math.max(1,Math.round(iW*fadePct));
@@ -3866,6 +4516,7 @@ function buildStitchedROIFast(){
       const wy= ly<fadeY    ? (1-Math.cos(Math.PI*ly/fadeY))*0.5
               : ry_from_bot<fadeY ? (1-Math.cos(Math.PI*ry_from_bot/fadeY))*0.5
               : 1.0;
+      const ny=(ly+0.5)/iH*nH;   // -> native pixel coordinate (pixel-center convention), for sampling
 
       for(let rx=rx0;rx<rx1;rx++){
         const lx=rx-Math.round(inst.x-roi.x);  // distance from left edge
@@ -3873,27 +4524,88 @@ function buildStitchedROIFast(){
         const wx= lx<fadeX    ? (1-Math.cos(Math.PI*lx/fadeX))*0.5
                 : rx_from_right<fadeX ? (1-Math.cos(Math.PI*rx_from_right/fadeX))*0.5
                 : 1.0;
+        const nx=(lx+0.5)/iW*nW;
 
-        const w=wx*wy;
         const idx=ry*rW+rx;
-        const val=id[idx*4];
-        if(mode==='top'){
+        const val=_biSampleF32(fdata,nW,nH,nx,ny);
+        if(mode==='max'){
+          if(val>out[idx])out[idx]=val;
+          cnt[idx]=1;
+        }else if(mode==='top'){
           // over-composite: front instance (drawn later) paints over the back
-          const a=Math.max(0,Math.min(1,w));
+          const a=Math.max(0,Math.min(1,wx*wy));
           out[idx]=out[idx]*(1-a)+val*a;
           cnt[idx]=Math.max(cnt[idx],a);   // track coverage so untouched pixels stay 0
         }else{
+          const dw=useDist?distCenterWeight(lx,ly,iW,iH,distPow):1;
+          const w=wx*wy*dw;
           acc[idx]+=val*w*pcw;
           cnt[idx]+=w*pcw;
         }
       }
     }
   });
+  }else{
+    // Rotated ROI: same cosine-taper weighted compositing as above, but the ROI's local grid is
+    // no longer aligned with world axes, so each output pixel is mapped individually into world
+    // space (via the ROI's own rotation) and bilinear-sampled from each overlapping instance,
+    // rather than drawImage-cropping instances directly onto an axis-aligned ROI-sized canvas.
+    const cosT=Math.cos(rot),sinT=Math.sin(rot);
+    const cxW=roi.x+rW/2,cyW=roi.y+rH/2;   // ROI center, world coords
+    const instData=instances.map(inst=>{
+      const cls=getCls(inst.classId);if(!cls)return null;
+      const iW=iDispW(inst),iH=iDispH(inst);
+      const{data,w:nW,h:nH}=clsToFloat(cls,{...inst,opacity:1});
+      const pcw=useCount?Math.max(1e-6,(pc&&pc[cls.id])||1):1;
+      return{inst,iW,iH,nW,nH,data,pcw};
+    }).filter(Boolean);
 
-  if(mode!=='top') for(let i=0;i<rW*rH;i++) out[i]=cnt[i]>1e-6?acc[i]/cnt[i]:0;
+    for(let ly=0;ly<rH;ly++){
+      const v=(ly+0.5)-rH/2;
+      for(let lx=0;lx<rW;lx++){
+        const u=(lx+0.5)-rW/2;
+        const wx=cxW+u*cosT-v*sinT,wy=cyW+u*sinT+v*cosT;
+        const idx=ly*rW+lx;
+        for(const d of instData){
+          const{inst,iW,iH,nW,nH,data,pcw}=d;
+          const ilx=wx-inst.x,ily=wy-inst.y;              // display-unit offset from instance's top-left
+          if(ilx<0||ilx>=iW||ily<0||ily>=iH)continue;
+          const nx=ilx/iW*nW,ny=ily/iH*nH;                // -> native cc pixel coords, for sampling
+          const val=_biSampleF32(data,nW,nH,nx,ny);
+
+          if(mode==='max'){
+            if(val>out[idx])out[idx]=val;
+            cnt[idx]=1;
+            continue;
+          }
+          const fadeX=Math.max(1,Math.round(iW*fadePct)),fadeY=Math.max(1,Math.round(iH*fadePct));
+          const rx_from_right=iW-ilx,ry_from_bot=iH-ily;
+          const wxw= ilx<fadeX ? (1-Math.cos(Math.PI*ilx/fadeX))*0.5
+                   : rx_from_right<fadeX ? (1-Math.cos(Math.PI*rx_from_right/fadeX))*0.5
+                   : 1.0;
+          const wyw= ily<fadeY ? (1-Math.cos(Math.PI*ily/fadeY))*0.5
+                   : ry_from_bot<fadeY ? (1-Math.cos(Math.PI*ry_from_bot/fadeY))*0.5
+                   : 1.0;
+          if(mode==='top'){
+            const a=Math.max(0,Math.min(1,wxw*wyw));
+            out[idx]=out[idx]*(1-a)+val*a;
+            cnt[idx]=Math.max(cnt[idx],a);
+          }else{
+            const dw=useDist?distCenterWeight(ilx,ily,iW,iH,distPow):1;
+            const w=wxw*wyw*dw;
+            acc[idx]+=val*w*pcw;
+            cnt[idx]+=w*pcw;
+          }
+        }
+      }
+    }
+  }
+
+  if(mode==='equal') for(let i=0;i<rW*rH;i++) out[i]=cnt[i]>1e-6?acc[i]/cnt[i]:0;
+  else if(mode==='max') for(let i=0;i<rW*rH;i++) if(cnt[i]<1e-6) out[i]=0;
   return{data:out,W:rW,H:rH};
 }
-function openXS(){if(!roi){alert('Draw ROI first (R key).');return;}if(!instances.length){alert('Add class averages first.');return;}if(roi){document.getElementById('xs-roi-w').value=Math.round(roi.w);document.getElementById('xs-roi-h').value=Math.round(roi.h);}openMo('xs-modal');setTimeout(()=>runRadon(),80);}
+function openXS(){if(!roi){alert('Draw ROI first (R key).');return;}if(!instances.length){alert('Add class averages first.');return;}xsSyncROIToPanel();openMo('xs-modal');setTimeout(()=>runRadon(),80);}
 async function runRadon(){
   document.getElementById('xs-pw').style.display='';setPg('xs',0,'Building stitched image...');document.getElementById('xs-ent-wrap').style.display='none';await yf();
   const result=buildStitchedROIFast();if(!result){document.getElementById('xs-pw').style.display='none';alert('No instances overlap the ROI.');return;}
@@ -4175,7 +4887,7 @@ function runPeriodicity(){
   if(top.length===0){document.getElementById('peri-results').textContent='No clear periodicity detected.';document.getElementById('peri-pick').innerHTML='<option value="">No peaks found</option>';}
   else{let html='';const sel=document.getElementById('peri-pick');sel.innerHTML='<option value="">-- pick period --</option>';top.forEach((p,i)=>{const angA=(p.lag*px).toFixed(2);html+=`${i===0?'*':' '} Lag ${p.lag} px = ${angA} A (NCC ${(p.val*100).toFixed(1)}%)\n`;const opt=document.createElement('option');opt.value=p.lag;opt.textContent=`${p.lag} px = ${angA} A (${(p.val*100).toFixed(1)}%)`;sel.appendChild(opt);});document.getElementById('peri-results').textContent=html.trim();sel.selectedIndex=1;}
 }
-function applyPeriodToROI(){const period=+document.getElementById('peri-pick').value;if(!period)return;const mult=Math.max(1,+document.getElementById('peri-mult').value||1);const newW=period*mult;if(!roi){roi={x:0,y:0,w:newW,h:60};}else{const cx=roi.x+roi.w/2,cy=roi.y+roi.h/2;roi={x:cx-newW/2,y:cy-roi.h/2,w:newW,h:roi.h};}syncROICtrl();updROIBadge();closeMo('peri-modal');render();document.getElementById('roi-ctrl').classList.add('vis');}
+function applyPeriodToROI(){const period=+document.getElementById('peri-pick').value;if(!period)return;const mult=Math.max(1,+document.getElementById('peri-mult').value||1);const newW=period*mult;if(!roi){roi={x:0,y:0,w:newW,h:60,rot:0};}else{const cx=roi.x+roi.w/2,cy=roi.y+roi.h/2;roi={x:cx-newW/2,y:cy-roi.h/2,w:newW,h:roi.h,rot:roi.rot||0};}syncROICtrl();updROIBadge();closeMo('peri-modal');render();document.getElementById('roi-ctrl').classList.add('vis');}
 
 function applyCnSym(data,sz,n){if(n<=1)return data;const out=new Float32Array(sz*sz);const cx=sz/2,cy=sz/2;const step=2*Math.PI/n;for(let y=0;y<sz;y++)for(let x=0;x<sz;x++){const dx=x-cx,dy=y-cy,r=Math.sqrt(dx*dx+dy*dy);const baseAngle=Math.atan2(dy,dx);let sum=0,cnt=0;for(let k=0;k<n;k++){const angle=baseAngle+k*step;const sx=cx+r*Math.cos(angle);const sy=cy+r*Math.sin(angle);const ix=Math.floor(sx),iy2=Math.floor(sy);if(ix>=0&&ix<sz-1&&iy2>=0&&iy2<sz-1){const fx=sx-ix,fy=sy-iy2;sum+=data[iy2*sz+ix]*(1-fx)*(1-fy)+data[iy2*sz+ix+1]*fx*(1-fy)+data[(iy2+1)*sz+ix]*(1-fx)*fy+data[(iy2+1)*sz+ix+1]*fx*fy;cnt++;}}out[y*sz+x]=cnt>0?sum/cnt:0;}return out;}
 
@@ -4185,12 +4897,22 @@ function sampleHelical(r,phi_rel,symData,rCov){if(r>rCov)return 0;const sz=fbpSz
 function setHand(h){helicalHand=h==='+'?1:-1;const pos=document.getElementById('v3d-hand-pos');const neg=document.getElementById('v3d-hand-neg');if(!pos||!neg)return;pos.style.background=h==='+'?'var(--navy)':'var(--pan3)';pos.style.color=h==='+'?'#ddf':'var(--txt-d)';neg.style.background=h==='-'?'var(--navy)':'var(--pan3)';neg.style.color=h==='-'?'#ddf':'var(--txt-d)';updVI();}
 function updVI(){if(!fbpData)return;const sz=fbpSz,px=+document.getElementById('px-inp').value||1;const rise_ang=+document.getElementById('v3d-rise').value||4.75;const twist_deg=+document.getElementById('v3d-twist').value||22.0;const rCov=xsSinoH/2;const rise_px=rise_ang/px;const n180=180/Math.max(0.001,twist_deg);const co_ang=n180*rise_ang;const co_px=co_ang/px;document.getElementById('v3d-vol').textContent=sz+' x '+sz+' x '+sz;document.getElementById('v3d-vox').textContent=px.toFixed(4);document.getElementById('v3d-cov').textContent=Math.round(rCov);document.getElementById('v3d-cov-ang').textContent=(rCov*px).toFixed(1);document.getElementById('v3d-rise-px').textContent=rise_px.toFixed(2);document.getElementById('v3d-co-ang').textContent=co_ang.toFixed(1);document.getElementById('v3d-co-px').textContent=co_px.toFixed(1);document.getElementById('v3d-fsz').textContent='~'+(sz*sz*sz*4/1048576).toFixed(1)+' MB';}
 function open3D(){if(!fbpData){alert('Run cross-section computation first.');return;}closeMo('xs-modal');const xsSym=document.getElementById('xs-sym')?.value||'1';document.getElementById('v3d-sym').value=xsSym;updVI();openMo('v3d-modal');setTimeout(()=>prevSl(),80);}
-function prevSl(){if(!fbpData)return;updVI();const symData=getSymData();const sz=fbpSz,cx=sz/2,cy=sz/2;const rCov=Math.max(1,xsSinoH/2);const px=+document.getElementById('px-inp').value||1;const rise_ang=+document.getElementById('v3d-rise').value||4.75;const twist_deg=+document.getElementById('v3d-twist').value||22.0;const twist_rad=twist_deg*Math.PI/180;const rise_px=rise_ang/px;const tpp=helicalHand*twist_rad/rise_px;drawF32(symData,sz,sz,document.getElementById('v3d-xc'),-3,3,false);document.getElementById('v3d-xi').textContent=sz+'x'+sz;const eq=new Float32Array(sz*sz);const twist_mid=(Math.floor(sz/2)-cy)*tpp;for(let iz=0;iz<sz;iz++)for(let ix=0;ix<sz;ix++){const dx=ix-cx,dz=iz-cy,r=Math.sqrt(dx*dx+dz*dz);if(r>rCov)continue;eq[iz*sz+ix]=sampleHelical(r,Math.atan2(dz,dx)-twist_mid,symData,rCov);}drawF32(eq,sz,sz,document.getElementById('v3d-ec'),-3,3,false);document.getElementById('v3d-ei').textContent=sz+'x'+sz;const mer=new Float32Array(sz*sz);for(let iy=0;iy<sz;iy++){const tw=(iy-cy)*tpp;for(let iz=0;iz<sz;iz++){const dx=Math.floor(sz/2)-cx,dz=iz-cy,r=Math.sqrt(dx*dx+dz*dz);if(r>rCov)continue;mer[iy*sz+iz]=sampleHelical(r,Math.atan2(dz,dx)-tw,symData,rCov);}}drawF32(mer,sz,sz,document.getElementById('v3d-mc2'),-3,3,false);document.getElementById('v3d-mi').textContent=sz+'x'+sz;}
-async function comp3D(){if(!fbpData)return;const symData=getSymData();const sz=fbpSz,cx=sz/2,cy=sz/2;const rCov=Math.max(1,xsSinoH/2);const px=+document.getElementById('px-inp').value||1;const rise_ang=+document.getElementById('v3d-rise').value||4.75;const twist_deg=+document.getElementById('v3d-twist').value||22.0;const twist_rad=twist_deg*Math.PI/180;const rise_px=rise_ang/px;const tpp=helicalHand*twist_rad/rise_px;const btn=document.getElementById('v3d-btn');btn.disabled=true;document.getElementById('v3d-pw').style.display='';setPg('v3d',0,'Allocating...');await yf();const vol=new Float32Array(sz*sz*sz);for(let iz=0;iz<sz;iz++){for(let iy=0;iy<sz;iy++){const tw=(iy-cy)*tpp;for(let ix=0;ix<sz;ix++){const dx=ix-cx,dz=iz-cy,r=Math.sqrt(dx*dx+dz*dz);if(r>rCov)continue;vol[iz*sz*sz+iy*sz+ix]=sampleHelical(r,Math.atan2(dz,dx)-tw,symData,rCov);}}if(iz%4===0){setPg('v3d',iz/sz*95,'Slice '+iz+'/'+sz);await yf();}}setPg('v3d',96,'Writing MRC...');await yf();const buf=wMRC(vol,sz,sz,sz,px);const blob=new Blob([buf],{type:'application/octet-stream'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='initial_model_'+sz+'px_'+px.toFixed(2)+'A_rise'+rise_ang+'_twist'+twist_deg+(helicalHand>0?'R':'L')+'.mrc';a.click();URL.revokeObjectURL(url);r2oTrackDownload(a.download,{rise_A:rise_ang,twist_deg,handedness:helicalHand>0?'right':'left',Cn_symmetry:parseInt(document.getElementById('v3d-sym').value)||1,pixel_size_A:px,box_px:sz});setPg('v3d',100,'Done');btn.disabled=false;setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);}
+function prevSl(){if(!fbpData)return;updVI();const symData=getSymData();const sz=fbpSz,cx=sz/2,cy=sz/2,cz=sz/2;const rCov=Math.max(1,xsSinoH/2);const px=+document.getElementById('px-inp').value||1;const rise_ang=+document.getElementById('v3d-rise').value||4.75;const twist_deg=+document.getElementById('v3d-twist').value||22.0;const twist_rad=twist_deg*Math.PI/180;const rise_px=rise_ang/px;const tpp=helicalHand*twist_rad/rise_px;drawF32(symData,sz,sz,document.getElementById('v3d-xc'),-3,3,false);document.getElementById('v3d-xi').textContent=sz+'x'+sz;
+  // Cross-section (X/Y plane) at a representative Z = box center - matches comp3D's Z-is-the-
+  // helical-axis convention (previously this sliced X/Z at a fixed Y, back when Y was the axis).
+  const eq=new Float32Array(sz*sz);const twist_mid=(Math.floor(sz/2)-cz)*tpp;for(let iy=0;iy<sz;iy++)for(let ix=0;ix<sz;ix++){const dx=ix-cx,dy=iy-cy,r=Math.sqrt(dx*dx+dy*dy);if(r>rCov)continue;eq[iy*sz+ix]=sampleHelical(r,Math.atan2(dy,dx)-twist_mid,symData,rCov);}drawF32(eq,sz,sz,document.getElementById('v3d-ec'),-3,3,false);document.getElementById('v3d-ei').textContent=sz+'x'+sz;
+  // Meridional/longitudinal section through the box's center column, along the helix (Z) axis.
+  const mer=new Float32Array(sz*sz);for(let iz=0;iz<sz;iz++){const tw=(iz-cz)*tpp;for(let iy=0;iy<sz;iy++){const dx=Math.floor(sz/2)-cx,dy=iy-cy,r=Math.sqrt(dx*dx+dy*dy);if(r>rCov)continue;mer[iz*sz+iy]=sampleHelical(r,Math.atan2(dy,dx)-tw,symData,rCov);}}drawF32(mer,sz,sz,document.getElementById('v3d-mc2'),-3,3,false);document.getElementById('v3d-mi').textContent=sz+'x'+sz;}
+async function comp3D(){if(!fbpData)return;const symData=getSymData();const sz=fbpSz,cx=sz/2,cy=sz/2,cz=sz/2;const rCov=Math.max(1,xsSinoH/2);const px=+document.getElementById('px-inp').value||1;const rise_ang=+document.getElementById('v3d-rise').value||4.75;const twist_deg=+document.getElementById('v3d-twist').value||22.0;const twist_rad=twist_deg*Math.PI/180;const rise_px=rise_ang/px;const tpp=helicalHand*twist_rad/rise_px;const btn=document.getElementById('v3d-btn');btn.disabled=true;document.getElementById('v3d-pw').style.display='';setPg('v3d',0,'Allocating...');await yf();const vol=new Float32Array(sz*sz*sz);
+  // Helical axis = Z (matches RELION/standard convention for a helical initial model), so the
+  // twist is applied per Z-slice (iz) and the cross-section (r, azimuth) is built from the X/Y
+  // plane (ix,iy) - previously this was swapped (twist per iy), leaving the fibril running
+  // along Y in the output map instead of Z.
+  for(let iz=0;iz<sz;iz++){const tw=(iz-cz)*tpp;for(let iy=0;iy<sz;iy++){const dy=iy-cy;for(let ix=0;ix<sz;ix++){const dx=ix-cx,r=Math.sqrt(dx*dx+dy*dy);if(r>rCov)continue;vol[iz*sz*sz+iy*sz+ix]=sampleHelical(r,Math.atan2(dy,dx)-tw,symData,rCov);}}if(iz%4===0){setPg('v3d',iz/sz*95,'Slice '+iz+'/'+sz);await yf();}}setPg('v3d',96,'Writing MRC...');await yf();const buf=wMRC(vol,sz,sz,sz,px);const blob=new Blob([buf],{type:'application/octet-stream'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='initial_model_'+sz+'px_'+px.toFixed(2)+'A_rise'+rise_ang+'_twist'+twist_deg+(helicalHand>0?'R':'L')+'.mrc';a.click();URL.revokeObjectURL(url);r2oTrackDownload(a.download,{rise_A:rise_ang,twist_deg,handedness:helicalHand>0?'right':'left',Cn_symmetry:parseInt(document.getElementById('v3d-sym').value)||1,pixel_size_A:px,box_px:sz});setPg('v3d',100,'Done');btn.disabled=false;setTimeout(()=>document.getElementById('v3d-pw').style.display='none',700);}
 function wMRC(data,nx,ny,nz,pixSz){const buf=new ArrayBuffer(1024+nx*ny*nz*4),dv=new DataView(buf);dv.setInt32(0,nx,true);dv.setInt32(4,ny,true);dv.setInt32(8,nz,true);dv.setInt32(12,2,true);dv.setInt32(28,nx,true);dv.setInt32(32,ny,true);dv.setInt32(36,nz,true);dv.setFloat32(40,nx*pixSz,true);dv.setFloat32(44,ny*pixSz,true);dv.setFloat32(48,nz*pixSz,true);dv.setFloat32(52,90,true);dv.setFloat32(56,90,true);dv.setFloat32(60,90,true);dv.setInt32(64,1,true);dv.setInt32(68,2,true);dv.setInt32(72,3,true);let mn=Infinity,mx=-Infinity,sm=0;for(let i=0;i<data.length;i++){mn=Math.min(mn,data[i]);mx=Math.max(mx,data[i]);sm+=data[i];}dv.setFloat32(76,mn,true);dv.setFloat32(80,mx,true);dv.setFloat32(84,sm/data.length,true);dv.setInt32(88,1,true);[77,65,80,32].forEach((c,i)=>dv.setUint8(208+i,c));dv.setUint8(212,0x44);dv.setUint8(213,0x44);new Float32Array(buf,1024).set(data);return buf;}
 
-function xsSyncROIToPanel(){if(roi){document.getElementById('xs-roi-w').value=Math.round(roi.w);document.getElementById('xs-roi-h').value=Math.round(roi.h);}}
-function xsAdjustROI(){const newW=Math.max(4,+document.getElementById('xs-roi-w').value||roi?.w||100);const newH=Math.max(4,+document.getElementById('xs-roi-h').value||roi?.h||60);if(!roi){roi={x:0,y:0,w:newW,h:newH};}else{const cx=roi.x+roi.w/2,cy=roi.y+roi.h/2;roi={x:cx-newW/2,y:cy-newH/2,w:newW,h:newH};}const patch=captureROI();if(patch){[document.getElementById('xs-prev'),document.getElementById('xs-pc')].forEach(c=>{c.width=patch.width;c.height=patch.height;c.getContext('2d').drawImage(patch,0,0);});document.getElementById('xs-pi2').textContent=`${patch.width}x${patch.height}`;document.getElementById('xs-pinf').textContent=`${patch.width}x${patch.height} px`;}syncROICtrl();updROIBadge();render();}
+function xsSyncROIToPanel(){if(roi){document.getElementById('xs-roi-w').value=Math.round(roi.w);document.getElementById('xs-roi-h').value=Math.round(roi.h);const rot=roi.rot||0;document.getElementById('xs-roi-rot').value=rot;document.getElementById('xs-roi-rot-slider').value=rot;}}
+function xsAdjustROI(){const newW=Math.max(4,+document.getElementById('xs-roi-w').value||roi?.w||100);const newH=Math.max(4,+document.getElementById('xs-roi-h').value||roi?.h||60);const newRot=+document.getElementById('xs-roi-rot').value||0;document.getElementById('xs-roi-rot-slider').value=newRot;if(!roi){roi={x:0,y:0,w:newW,h:newH,rot:newRot};}else{const cx=roi.x+roi.w/2,cy=roi.y+roi.h/2;roi={x:cx-newW/2,y:cy-newH/2,w:newW,h:newH,rot:newRot};}const patch=captureROI();if(patch){[document.getElementById('xs-prev'),document.getElementById('xs-pc')].forEach(c=>{c.width=patch.width;c.height=patch.height;c.getContext('2d').drawImage(patch,0,0);});document.getElementById('xs-pi2').textContent=`${patch.width}x${patch.height}`;document.getElementById('xs-pinf').textContent=`${patch.width}x${patch.height} px`;}syncROICtrl();updROIBadge();render();}
 function xsRerunFromROI(){xsAdjustROI();runRadon();}
 
 function loadTestDataset(){
