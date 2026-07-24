@@ -110,9 +110,10 @@ input[type=checkbox]{accent-color:var(--gold);}
 .chep-name-inp::placeholder{color:var(--txt-d);}
 .stack-meta{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--txt-d);letter-spacing:.5px;}
 .stack-del{cursor:pointer;color:var(--txt-d);font-size:11px;padding:1px 3px;border-radius:2px;}.stack-del:hover{color:#f99;}
-.stack-star{cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.3px;color:var(--txt-d);padding:2px 4px;border-radius:2px;white-space:nowrap;flex-shrink:0;}
-.stack-star:hover{color:var(--txt);background:var(--pan2);}
-.stack-star.linked{color:var(--gold);}
+.stack-star{cursor:pointer;font-family:var(--font-ui);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:var(--radius);white-space:nowrap;flex-shrink:0;border:1px solid var(--gold);background:var(--gold-d);color:#fff;transition:background var(--t-fast),border-color var(--t-fast);}
+.stack-star:hover{background:var(--gold);color:#000;}
+.stack-star.linked{background:transparent;border-color:var(--grn);color:var(--grn);}
+.stack-star.linked:hover{background:var(--grn-d);color:#dfffee;}
 .grp-item{cursor:pointer;}.grp-item .stack-info{cursor:pointer;}
 .grp-item.grp-active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;}
 .grp-actions{display:flex;gap:4px;margin-top:3px;}
@@ -259,22 +260,20 @@ input[type=checkbox]{accent-color:var(--gold);}
   <div id="sidebar" style="width:252px">
     <!-- STACKS -->
     <div class="psec">
-      <div class="ph" onclick="tsec('sstacks')"><div class="ph-t">STACKS <span id="stk-cnt" style="color:var(--gold)">(0)</span></div><div class="chev o" id="chev-sstacks">&#9662;</div></div>
-      <div class="pb" id="sstacks">
+      <div class="ph" onclick="tsec('sstacks')"><div class="ph-t">STACKS <span id="stk-cnt" style="color:var(--gold)">(0)</span></div><div class="chev" id="chev-sstacks">&#9662;</div></div>
+      <div class="pb col" id="sstacks">
         <div id="stacks-list"><div id="no-stacks" style="color:var(--txt-d);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px;letter-spacing:.5px">No stacks loaded.</div></div>
-        <input type="file" id="stack-star-input" accept=".star,.cs" style="display:none">
-        <div style="color:var(--txt-d);font-family:'IBM Plex Mono',monospace;font-size:8px;padding:3px 2px 0;letter-spacing:.3px">Click a stack's STAR badge to link a RELION particles.star or CryoSPARC .cs file - CHEP, Polarity and Crossover(coords) then pick it up automatically.</div>
+        <input type="file" id="stack-star-input" accept=".star" style="display:none">
+        <div style="color:var(--txt-d);font-family:'IBM Plex Mono',monospace;font-size:8px;padding:3px 2px 0;letter-spacing:.3px">Click LINK STAR above (the only way to load particle data) to attach a RELION particles.star or CryoSPARC .cs file to a stack - CHEP, Polarity and Crossover(coords) then pick it from the STACK dropdown in their own panels.</div>
       </div>
     </div>
     <!-- CHEP -->
     <div class="psec">
       <div class="ph" onclick="tsec('schep')" title="CHEP: Clustering of HElical Polymers (Pothula/Schröder). Splits classes into homogeneous polymorph groups using a particle STAR file (helical tube ID, class number, micrograph name).">
         <div class="ph-t">CHEP <span id="chep-cnt" style="color:var(--gold)">(0)</span></div>
-        <div class="chev o" id="chev-schep">&#9662;</div>
+        <div class="chev" id="chev-schep">&#9662;</div>
       </div>
-      <div class="pb" id="schep">
-        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-chep-star').click()" title="RELION particles.star, or a CryoSPARC particles .cs file">Load particles .star/.cs</button></div>
-        <input type="file" id="fi-chep-star" accept=".star,.cs" style="display:none">
+      <div class="pb col" id="schep">
         <div class="fr" id="chep-target-row" style="display:none"><div class="fl">STACK</div><select class="fs" id="chep-target-stack" onchange="chepSetTarget(+this.value)"></select></div>
         <div id="chep-status" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);line-height:1.6;margin-bottom:7px">No STAR loaded.</div>
         <div class="fr" title="Which space the weighted k-means clusters. 'By Fibrils' is the published CHEP method (rows=filaments) - it gives you real filament clusters, a purity score per class, and cluster STAR export. 'By Classes' transposes the same math (rows=classes) as a quicker alternative view - no filament clusters, no purity, export disabled."><div class="fl">MODE</div><div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1"><button id="chep-mode-cls-btn" onclick="setChepMode('classes')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.3px" title="Cluster in CLASS space: rows=classes, features=filaments. Quick alternative view - no purity score, no filament-cluster STAR export.">By Classes</button><button id="chep-mode-fil-btn" onclick="setChepMode('fibrils')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.3px" title="Cluster in FIBRIL space: rows=filaments, features=classes (the published CHEP method). Gives purity scores and lets you export one particle STAR per filament cluster.">By Fibrils</button></div></div>
@@ -308,11 +307,9 @@ input[type=checkbox]{accent-color:var(--gold);}
     <div class="psec">
       <div class="ph" onclick="tsec('spol')" title="sl_polarity (Schröder lab). Uses per-particle psi angles across shared filaments to decide a consistent left-right orientation for each 2D class, then flips (mirrorX) classes so all point the same way.">
         <div class="ph-t">POLARITY <span id="pol-cnt" style="color:var(--gold)">(0)</span></div>
-        <div class="chev o" id="chev-spol">&#9662;</div>
+        <div class="chev" id="chev-spol">&#9662;</div>
       </div>
       <div class="pb col" id="spol">
-        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-pol-star').click()" title="RELION particles.star, or a CryoSPARC particles .cs file">Load particles .star/.cs</button></div>
-        <input type="file" id="fi-pol-star" accept=".star,.cs" style="display:none">
         <div class="fr" id="pol-target-row" style="display:none"><div class="fl">STACK</div><select class="fs" id="pol-target-stack" onchange="polSetTarget(+this.value)"></select></div>
         <div id="pol-status" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);line-height:1.6;margin-bottom:7px">No STAR loaded.</div>
         <div class="fr" title="Minimum number of filaments a pair of classes must both appear in before a polarity relationship is computed between them. Pairs sharing fewer filaments than this get zero weight (too little data to trust) - raise if the result looks noisy/unstable, lower if too few class pairs end up connected."><div class="fl">MIN SHARE</div><input type="number" class="fism" id="pol-minshare" value="3" min="1" step="1"><span class="tblbl">filaments/pair</span></div>
@@ -327,8 +324,8 @@ input[type=checkbox]{accent-color:var(--gold);}
     </div>
     <!-- CROP / SIZE -->
     <div class="psec">
-      <div class="ph" onclick="tsec('sc')"><div class="ph-t">CROP / SIZE</div><div class="chev o" id="chev-sc">&#9662;</div></div>
-      <div class="pb" id="sc">
+      <div class="ph" onclick="tsec('sc')"><div class="ph-t">CROP / SIZE</div><div class="chev" id="chev-sc">&#9662;</div></div>
+      <div class="pb col" id="sc">
         <div class="fr"><div class="fl">W x H</div><input type="number" class="fism" id="g-cw" placeholder="--" min="1" step="1"><span style="color:var(--txt-d);font-family:'IBM Plex Mono',monospace;font-size:11px">x</span><input type="number" class="fism" id="g-ch" placeholder="--" min="1" step="1"><span class="tblbl">px</span></div>
         <div class="tcol" style="margin-bottom:7px"><button class="btn pri" onclick="applyGlobalCrop()">Apply All</button><button class="btn" onclick="resetCrop()">Reset All</button></div>
         <div class="adv-h" onclick="togAdv('adv-gcrop')"><div class="chev" id="chev-adv-gcrop">&#9654;</div><div class="adv-hl">Advanced -- Offsets</div></div>
@@ -342,8 +339,8 @@ input[type=checkbox]{accent-color:var(--gold);}
     </div>
     <!-- CONTRAST -->
     <div class="psec">
-      <div class="ph" onclick="tsec('sct')"><div class="ph-t">CONTRAST</div><div class="chev o" id="chev-sct">&#9662;</div></div>
-      <div class="pb" id="sct">
+      <div class="ph" onclick="tsec('sct')"><div class="ph-t">CONTRAST</div><div class="chev" id="chev-sct">&#9662;</div></div>
+      <div class="pb col" id="sct">
         <div class="fr" style="margin-bottom:6px"><div class="fl">MODE</div><div style="display:flex;border:1px solid var(--bdr);border-radius:3px;overflow:hidden;flex:1"><button id="cm-sigma-btn" onclick="setCMode('sigma')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border:none;background:var(--navy);color:#ddf;letter-spacing:.5px">sigma Auto</button><button id="cm-manual-btn" onclick="setCMode('manual')" style="flex:1;padding:3px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border:none;background:var(--pan3);color:var(--txt-d);letter-spacing:.5px">Manual</button></div></div>
         <div id="cmode-sigma"><div class="srow"><label>MIN sigma</label><input type="range" id="cmin" min="-5" max="0" step="0.05" value="-3" oninput="updC()"><div class="sv" id="cmin-v">-3.0</div></div><div class="srow"><label>MAX sigma</label><input type="range" id="cmax" min="0" max="5" step="0.05" value="3" oninput="updC()"><div class="sv" id="cmax-v">3.0</div></div></div>
         <div id="cmode-manual" style="display:none"><div class="fr"><div class="fl">DATA MIN</div><input type="number" class="fi" id="cman-lo" value="0" step="any" oninput="updC()"></div><div class="fr"><div class="fl">DATA MAX</div><input type="number" class="fi" id="cman-hi" value="255" step="any" oninput="updC()"></div><button class="btn sm pri" onclick="autoManualLimits()" style="width:100%;margin-bottom:6px">Auto from data</button></div>
@@ -358,9 +355,9 @@ input[type=checkbox]{accent-color:var(--gold);}
     <div class="psec">
       <div class="ph" onclick="tsec('sstitch')" title="Sinogram cross-section from 2D class averages (cf. Scheres 2020 relion_helix_inimodel2d). Crossover distance = 180 deg (one crossover is the full tomographic span). Step 1 tiles the classes across one crossover; Step 2 iterates: FBP reconstruct → reproject → cross-correlate each class → update X,Y. Soft-edge blending in overlaps.">
         <div class="ph-t">HELIX STITCH <span id="stitch-cnt" style="color:var(--grn)">(0)</span></div>
-        <div class="chev o" id="chev-sstitch">&#9662;</div>
+        <div class="chev" id="chev-sstitch">&#9662;</div>
       </div>
-      <div class="pb" id="sstitch">
+      <div class="pb col" id="sstitch">
         <div class="fr" title="Crossover distance in Å - the fibril-axis distance for one full helical turn (180°, since a projection and its 180°-mirror are redundant in tomography). Sets how far apart the N selected classes are spaced so they tile exactly one crossover. Get this from 'Find C/O (auto)' below, the coordinate-based Crossover panel, or your own estimate."><div class="fl">C/O DIST</div><input type="number" class="fi" id="stitch-co" value="150" step="1" min="4" oninput="updMultiSelBadge()"><span class="tblbl">A</span></div>
         <div class="fr" title="Computed, not editable: the pixel offset between consecutive classes' left edges, derived from C/O DIST, the number of selected classes, and their average width - filled in after 'Place Classes'."><div class="fl">STEP</div><span id="stitch-step-lbl" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gold);flex:1">-- px / class</span></div>
         <div class="fr" style="margin-bottom:5px" title="Computed, not editable: how much adjacent classes' borders overlap (or, if negative, gap) given the STEP above and average class width - this is the region the soft cosine taper (FADE %) blends across."><div class="fl">OVERLAP</div><span id="stitch-ovlp-lbl" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt-d);flex:1">-- px per border</span></div>
@@ -418,11 +415,11 @@ input[type=checkbox]{accent-color:var(--gold);}
     <div class="psec">
       <div class="ph" onclick="tsec('sxo')" title="sl_crossover_from_coords (Sommerhage, Schröder lab). Independent, coordinate-based crossover estimate: for each filament, computes pairwise distances between particles of the SAME 2D class (same view recurs every crossover), pools them across filaments into a histogram, and reports the first prominent peak. A cross-check for the image-based overlap-NCC crossover solver above - agreement between the two is good evidence the estimate is real.">
         <div class="ph-t">CROSSOVER (COORDS) <span id="xo-cnt" style="color:var(--gold)">(0)</span></div>
-        <div class="chev o" id="chev-sxo">&#9662;</div>
+        <div class="chev" id="chev-sxo">&#9662;</div>
       </div>
       <div class="pb col" id="sxo">
-        <div class="fr"><div class="fl">STAR</div><button class="btn sm" style="width:auto;flex:1" onclick="document.getElementById('fi-xo-star').click()" title="RELION particles.star, or a CryoSPARC particles .cs file">Load particles .star/.cs</button></div>
-        <input type="file" id="fi-xo-star" accept=".star,.cs" style="display:none">
+        <div class="fr" id="xo-target-row" style="display:none"><div class="fl">STACK</div><select class="fs" id="xo-target-stack" onchange="xoSetTarget(+this.value)"></select></div>
+        <div class="fr" id="xo-poly-row" style="display:none"><div class="fl">POLYMORPH</div><select class="fs" id="xo-poly-select" onchange="xoSetPolymorph(this.value)"></select></div>
         <div id="xo-status" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--txt-d);line-height:1.6;margin-bottom:7px">No STAR loaded.</div>
         <div class="fr" title="Pixel size (Å/px) of the MICROGRAPH the particle coordinates were picked in - NOT the box/extraction pixel size (rlnImagePixelSize), which is often different (binned). Coordinates are in micrograph pixels, so this is what converts the picked pairwise distances into Angstrom. Getting this wrong scales the crossover estimate by the same wrong factor."><div class="fl">MIC PX</div><input type="number" class="fism" id="xo-angpix" value="1.0" min="0.01" step="0.01"><span class="tblbl">Å (micrograph, not box)</span></div>
         <div class="fr" title="Filaments with this many particles or fewer are excluded (need >MIN PART, strictly more). Short filaments rarely contain a same-class particle pair at all, and contribute noise rather than signal to the distance histogram."><div class="fl">MIN PART</div><input type="number" class="fism" id="xo-minpart" value="20" min="1" step="1"><span class="tblbl">per filament</span></div>
@@ -562,8 +559,8 @@ input[type=checkbox]{accent-color:var(--gold);}
   <div class="aph"><span>ALIGNMENT OPTIMIZATION</span><span class="fpc" onclick="clearMarks()">X</span></div>
   <div class="apb">
     <div class="arow">REF <span class="alab-a" id="al-a-lbl">--</span> MOV <span class="alab-b" id="al-b-lbl">--</span></div>
-    <div class="arow"><span style="width:60px">Trans +-</span><input type="number" class="fi" id="al-tr" value="20" min="1" max="200" style="width:40px;flex:none"><span>px step</span><input type="number" class="fi" id="al-ts" value="2" min="1" max="20" style="width:34px;flex:none"><span>px</span></div>
-    <div class="arow"><span style="width:60px">Rot +-</span><input type="number" class="fi" id="al-rr" value="15" min="0" max="180" style="width:40px;flex:none"><span>deg step</span><input type="number" class="fi" id="al-rs" value="3" min="0.1" max="30" step="0.1" style="width:34px;flex:none"><span>deg</span></div>
+    <div class="arow"><span style="width:60px">Trans +-</span><input type="number" class="fi" id="al-tr" value="10" min="1" max="200" style="width:48px;flex:none"><span>px step</span><input type="number" class="fi" id="al-ts" value="1" min="1" max="20" style="width:48px;flex:none"><span>px</span></div>
+    <div class="arow"><span style="width:60px">Rot +-</span><input type="number" class="fi" id="al-rr" value="3" min="0" max="180" step="0.1" style="width:48px;flex:none"><span>deg step</span><input type="number" class="fi" id="al-rs" value="0.1" min="0.1" max="30" step="0.1" style="width:48px;flex:none"><span>deg</span></div>
     <div id="al-prog-row" style="display:none"><div class="plbl2" id="al-prog-lbl">Searching...</div><div class="pbar"><div class="pfill" id="al-prog" style="width:0%"></div></div></div>
     <div class="aresult" id="al-result"><div class="aresult-grid"><div class="aresult-full">NCC <span class="v" id="al-ncc">--</span></div><div>dX <span class="v" id="al-dx">--</span> px</div><div>dY <span class="v" id="al-dy">--</span> px</div><div>dRot <span class="v" id="al-dr">--</span>°</div></div></div>
     <div style="display:flex;gap:5px"><button class="btn pri" id="al-run-btn" onclick="runOpt()" style="flex:2">Run Optimize</button><button class="btn gld" id="al-apply-btn" onclick="applyOpt()" style="flex:1;display:none">Apply</button></div>
@@ -583,7 +580,6 @@ input[type=checkbox]{accent-color:var(--gold);}
   <div style="padding:0 10px 8px"><input type="range" id="roi-rot-slider" min="-180" max="180" step="1" value="0" style="width:100%" oninput="document.getElementById('roi-rot').value=this.value;applyROICtrl()"></div>
   <div style="padding:0 10px 8px;display:flex;gap:5px">
     <button class="btn pri sm" onclick="snapROIToContent()" style="flex:1;width:auto">Snap to Fibril</button>
-    <button class="btn sm" onclick="snapROIToCanvas()" style="flex:1;width:auto">Canvas Ctr</button>
   </div>
   <div style="padding:0 10px 8px"><button class="btn sm" onclick="openPeriodicityModal()" style="width:100%;background:var(--pan3);border-color:var(--bdr-b)">Scan X Periodicity...</button></div>
   <div style="padding:0 10px 10px"><button class="btn sm gld" onclick="openROIExport()" style="width:100%">Export ROI as Image...</button></div>
@@ -835,7 +831,7 @@ input[type=checkbox]{accent-color:var(--gold);}
 </div>
 
 <script>
-const APP_VERSION='1.1.0';
+const APP_VERSION='1.2.0';
 const APP_LICENSE_TEXT=`                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
@@ -1669,9 +1665,6 @@ function init(){
   MC.addEventListener('wheel',onWheel,{passive:false});window.addEventListener('keydown',onKey);
   document.getElementById('fi').addEventListener('change',loadMRCFiles);
   document.getElementById('fi-load').addEventListener('change',loadStateFile);
-  document.getElementById('fi-chep-star').addEventListener('change',loadChepStarFile);
-  document.getElementById('fi-pol-star').addEventListener('change',loadPolStarFile);
-  document.getElementById('fi-xo-star').addEventListener('change',loadCoordXoStarFile);
   document.getElementById('stack-star-input').addEventListener('change',onStackStarFileChosen);
   document.getElementById('px-inp').addEventListener('input',()=>{const b=document.getElementById('px-auto');if(b)b.style.display='none';updPxLbl();});  // #7: manual edit clears AUTO badge
   initSidebarResize();initThumbDockResize();initXSViewport();initXSScViewport();render();
@@ -1733,6 +1726,16 @@ document.addEventListener('drop',async e=>{
   for(const f of files)await loadOneMRC(f);
 });
 async function loadOneMRC(f){
+  // Loose extension-based sanity check against the current SOURCE toggle: RELION
+  // conventionally writes class averages as .mrcs, CryoSPARC as plain .mrc - a
+  // mismatch usually means the wrong SOURCE is selected (which also controls the
+  // cryoSPARC-specific 90-degree rotation applied in parseMRC below), not a bad file.
+  const isMrcs=/\.mrcs$/i.test(f.name);
+  if(source==='relion'&&!isMrcs){
+    if(confirm(`"${f.name}" is a plain .mrc file, but SOURCE is set to RELION (which conventionally writes .mrcs class-average stacks). This looks like CryoSPARC output.\n\nSwitch SOURCE to CryoSPARC and load it that way?`))setSrc('cryosparc');
+  }else if(source==='cryosparc'&&isMrcs){
+    if(confirm(`"${f.name}" is a .mrcs file, but SOURCE is set to CryoSPARC (which conventionally writes plain .mrc class-average stacks). This looks like RELION output.\n\nSwitch SOURCE to RELION and load it that way?`))setSrc('relion');
+  }
   // #1: surface load failures instead of throwing silently mid-parse.
   try{parseMRC(await f.arrayBuffer(),f.name);}
   catch(err){console.error('MRC load failed:',err);alert(`Could not load "${f.name}":\n${err.message}`);}
@@ -1796,7 +1799,7 @@ function parseMRC(buf,fname='stack'){
     if(source==='cryosparc'){const r=rot90(raw,nx,ny);fd=r.d;fnx=r.nx;fny=r.ny;}
     classes.push({id:classes.length,raw:fd,nx:fnx,ny:fny,stackId:sc.id});
   }
-  updStacksList();updThumbs();updClsCnt();updChepTargetOptions();updPolTargetOptions();render();
+  updStacksList();updThumbs();updClsCnt();updChepTargetOptions();updPolTargetOptions();updCoordXoTargetOptions();render();
 }
 function rot90(d,nx,ny){const o=new Float32Array(nx*ny);for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)o[x*ny+(ny-1-y)]=d[y*nx+x];return{d:o,nx:ny,ny:nx};}
 
@@ -1817,13 +1820,13 @@ function updStacksList(){
     const badge=document.getElementById(`star-badge-${stk.id}`);
     if(badge){
       if(stk.star){
-        badge.textContent='★ STAR';
-        badge.title=`Linked STAR: ${stk.star.starName} - available to CHEP, Polarity, Crossover(coords) and particle-count weighting. Click to unlink.`;
+        badge.textContent='★ Linked';
+        badge.title=`Linked STAR: ${stk.star.starName} - pick this stack from the STACK dropdown in CHEP, Polarity or Crossover(coords) to use it. Click to unlink.`;
         badge.onclick=()=>unlinkStackStar(stk.id);
         badge.classList.add('linked');
       }else{
-        badge.textContent='☆ STAR';
-        badge.title="No STAR linked - click to load this stack's particles .star once, for use by every tool that needs it.";
+        badge.textContent='🔗 Link STAR';
+        badge.title="Load this stack's particles .star or .cs once here - CHEP, Polarity and Crossover(coords) then pick it up from their own STACK dropdown.";
         badge.onclick=()=>triggerStackStarPick(stk.id);
         badge.classList.remove('linked');
       }
@@ -1843,7 +1846,8 @@ function removeStack(sid){
   document.getElementById('no-stacks').style.display=stacks.length?'none':'';
   if(chep.targetStackId===sid){chep.targetStackId=null;resetChep();}
   if(pol.targetStackId===sid){pol.targetStackId=null;resetPolarity();}
-  updChepTargetOptions();updPolTargetOptions();
+  if(coordXo.targetStackId===sid){coordXo.targetStackId=null;resetCoordXo();}
+  updChepTargetOptions();updPolTargetOptions();updCoordXoTargetOptions();
   deselect();refreshThumbSt();updClsCnt();updOC();updAlignPanel();updMultiSelBadge();render();
 }
 
@@ -2103,21 +2107,22 @@ function readParticleFile(file,onParsed,onError){
 // ════════════ PER-STACK LINKED STAR ════════════
 // A stack's `.star` ({starName,var_,data,optics} - the raw parsed STAR, before any
 // tool-specific column extraction) is the single source of truth once linked: CHEP,
-// Polarity, and (best-effort) the coordinate-based Crossover solver all adopt it
-// automatically for whichever stack they're targeting, so the same particles.star only
-// needs to be loaded once - via any one of those tools' own "load STAR" button, or the
-// STAR icon in the STACKS list - rather than re-uploaded separately per tool.
+// Polarity and Crossover(coords) all adopt it for whichever stack they're targeting.
+// This LINK STAR control (on the STACKS panel) is the ONLY way to load a particle
+// STAR/CS file - CHEP/Polarity/Crossover(coords) each just pick a linked stack from
+// their own STACK dropdown, they no longer have upload buttons of their own.
 function linkStarToStack(stackId,starRaw){
   const stk=getStack(stackId);if(!stk)return;
   stk.star=starRaw;
   updStacksList();
-  // Give CHEP/Polarity a chance to auto-adopt this star right now if they don't already have
-  // their own loaded (both calls are already safe/idempotent - they only auto-adopt when that
-  // tool is empty, same as when its own target-stack dropdown changes) - otherwise linking via
-  // one tool only benefits it until the OTHER tool's dropdown happens to be touched later.
+  // Give CHEP/Polarity/Crossover(coords) a chance to auto-adopt this star right now if they
+  // don't already have their own loaded (all three calls are already safe/idempotent - they
+  // only auto-adopt when that tool is empty, same as when its own target-stack dropdown
+  // changes) - otherwise linking via one tool only benefits it until the other tools'
+  // dropdowns happen to be touched later.
   updChepTargetOptions();
   updPolTargetOptions();
-  if(!coordXo.data)autoFillCoordXoFromLinkedStars();
+  updCoordXoTargetOptions();
 }
 function unlinkStackStar(stackId){
   const stk=getStack(stackId);if(!stk)return;
@@ -2125,29 +2130,32 @@ function unlinkStackStar(stackId){
   updStacksList();
 }
 let _stackStarPickTarget=null;
-function triggerStackStarPick(stackId){_stackStarPickTarget=stackId;document.getElementById('stack-star-input').click();}
+// The particle file picker only ever offers/accepts the format matching the current
+// SOURCE toggle - RELION reads .star, CryoSPARC reads .cs - since the two formats
+// aren't interchangeable (CHEP/Polarity/Crossover(coords) all assume the linked
+// particle file actually came from the selected source).
+function triggerStackStarPick(stackId){
+  _stackStarPickTarget=stackId;
+  const inp=document.getElementById('stack-star-input');
+  inp.accept=source==='cryosparc'?'.cs':'.star';
+  inp.click();
+}
 function onStackStarFileChosen(e){
   const f=e.target.files[0];const stackId=_stackStarPickTarget;
   if(!f||stackId==null){e.target.value='';return;}
+  const isCs=/\.cs$/i.test(f.name);
+  if(source==='cryosparc'&&!isCs){alert(`SOURCE is set to CryoSPARC, which only reads .cs particle files.\n\n"${f.name}" is not a .cs file - switch SOURCE to RELION first if this is a .star file.`);e.target.value='';return;}
+  if(source==='relion'&&isCs){alert(`SOURCE is set to RELION, which only reads .star particle files.\n\n"${f.name}" is a .cs file - switch SOURCE to CryoSPARC first to load it.`);e.target.value='';return;}
   readParticleFile(f,
     starRaw=>{
       linkStarToStack(stackId,starRaw);
       if(chep.targetStackId===stackId)chepSetTarget(stackId);
       if(pol.targetStackId===stackId)polSetTarget(stackId);
+      if(coordXo.targetStackId===stackId)xoSetTarget(stackId);
     },
     err=>alert('STAR/CS parse error: '+err.message)
   );
   e.target.value='';
-}
-// Crossover(coords) has no per-stack target of its own (a crossover estimate from picking
-// coordinates isn't tied to a specific 2D-classification stack) - so it just adopts the
-// first linked star (from any stack) that has the columns it needs, if it doesn't already
-// have its own data loaded.
-function autoFillCoordXoFromLinkedStars(){
-  if(coordXo.data)return;
-  const stk=stacks.find(s=>s.star&&buildCoordXoData(s.star.var_,s.star.data));
-  if(!stk)return;
-  applyStarToCoordXo(stk.star,true);
 }
 
 function buildChepMatrix(varArr,dataArr){
@@ -2178,37 +2186,26 @@ function applyStarToChep(starRaw,silent){
   chep.filId=matrix.filId;chep.clsId=matrix.clsId;chep.nFil=matrix.nFil;chep.nClsStar=matrix.nCls;
   return true;
 }
-function loadChepStarFile(e){
-  const f=e.target.files[0];if(!f)return;
-  readParticleFile(f,
-    starRaw=>{
-      if(!applyStarToChep(starRaw))return;
-      refreshChepTargetDropdown();
-      // A fresh upload via THIS tool's own button always wins - link it onto the target stack
-      // so Polarity/Crossover(coords)/the particle-count overlap weight pick it up too.
-      if(chep.targetStackId!=null)linkStarToStack(chep.targetStackId,starRaw);
-      updChepStatus();
-      document.getElementById('chep-run-btn').disabled=!(chep.filId&&chep.targetStackId);
-    },
-    err=>alert('STAR/CS parse error: '+err.message)
-  );
-  e.target.value='';
-}
 // Rebuilds the target-stack <select> and picks/keeps a target, WITHOUT touching chep's
 // already-loaded star data (used when the stack list changes, not when switching target).
+// Only stacks with a linked STAR are listed - loading a particle file happens exclusively
+// via the STACKS panel's LINK STAR control now, not from within this panel.
 function refreshChepTargetDropdown(){
   const row=document.getElementById('chep-target-row');
   const sel=document.getElementById('chep-target-stack');
-  if(stacks.length<=1){
-    row.style.display='none';
-    chep.targetStackId=stacks.length===1?stacks[0].id:null;
-  }else{
-    row.style.display='';
-    const prev=chep.targetStackId;
-    sel.innerHTML=stacks.map(s=>`<option value="${s.id}">${s.name} (${s.classCount} cls)</option>`).join('');
-    chep.targetStackId=(prev&&stacks.find(s=>s.id===prev))?prev:(stacks[0]?.id??null);
-    if(chep.targetStackId!=null)sel.value=chep.targetStackId;
+  const linked=stacks.filter(s=>s.star);
+  row.style.display=stacks.length?'':'none';
+  if(!linked.length){
+    sel.innerHTML='<option value="">-- no linked STAR files --</option>';
+    sel.disabled=true;
+    chep.targetStackId=null;
+    return;
   }
+  sel.disabled=false;
+  const prev=chep.targetStackId;
+  sel.innerHTML=linked.map(s=>`<option value="${s.id}">${s.name} (${s.classCount} cls)</option>`).join('');
+  chep.targetStackId=(prev&&linked.find(s=>s.id===prev))?prev:linked[0].id;
+  sel.value=chep.targetStackId;
 }
 // Explicit target switch (dropdown onchange, or a stack's STAR icon being loaded while it's
 // the current target): always (re)syncs from that stack's linked star, if any.
@@ -2234,7 +2231,10 @@ function updChepTargetOptions(){
 
 function updChepStatus(){
   const el=document.getElementById('chep-status');
-  if(!chep.filId){el.textContent='No STAR loaded.';return;}
+  if(!chep.filId){
+    el.textContent=stacks.some(s=>s.star)?'Select a target stack above.':'No STAR linked yet - link one via the STACKS panel above.';
+    return;
+  }
   const stack=getStack(chep.targetStackId);
   let msg=`STAR: ${chep.starName}<br>Particles: ${chep.filId.length} &middot; Filaments: ${chep.nFil} &middot; Classes in STAR: ${chep.nClsStar}`;
   if(stack){
@@ -3098,37 +3098,26 @@ function applyStarToPol(starRaw,silent){
   document.getElementById('pol-result').textContent='';
   return true;
 }
-function loadPolStarFile(e){
-  const f=e.target.files[0];if(!f)return;
-  readParticleFile(f,
-    starRaw=>{
-      if(!applyStarToPol(starRaw))return;
-      refreshPolTargetDropdown();
-      // A fresh upload via THIS tool's own button always wins - link it onto the target stack
-      // so CHEP/Crossover(coords)/the particle-count overlap weight pick it up too.
-      if(pol.targetStackId!=null)linkStarToStack(pol.targetStackId,starRaw);
-      updPolStatus();
-      document.getElementById('pol-run-btn').disabled=!(pol.presentClasses&&pol.targetStackId);
-    },
-    err=>alert('STAR/CS parse error: '+err.message)
-  );
-  e.target.value='';
-}
 // Rebuilds the target-stack <select> and picks/keeps a target, WITHOUT touching pol's
 // already-loaded star data (used when the stack list changes, not when switching target).
+// Only stacks with a linked STAR are listed - loading a particle file happens exclusively
+// via the STACKS panel's LINK STAR control now, not from within this panel.
 function refreshPolTargetDropdown(){
   const row=document.getElementById('pol-target-row');
   const sel=document.getElementById('pol-target-stack');
-  if(stacks.length<=1){
-    row.style.display='none';
-    pol.targetStackId=stacks.length===1?stacks[0].id:null;
-  }else{
-    row.style.display='';
-    const prev=pol.targetStackId;
-    sel.innerHTML=stacks.map(s=>`<option value="${s.id}">${s.name} (${s.classCount} cls)</option>`).join('');
-    pol.targetStackId=(prev&&stacks.find(s=>s.id===prev))?prev:(stacks[0]?.id??null);
-    if(pol.targetStackId!=null)sel.value=pol.targetStackId;
+  const linked=stacks.filter(s=>s.star);
+  row.style.display=stacks.length?'':'none';
+  if(!linked.length){
+    sel.innerHTML='<option value="">-- no linked STAR files --</option>';
+    sel.disabled=true;
+    pol.targetStackId=null;
+    return;
   }
+  sel.disabled=false;
+  const prev=pol.targetStackId;
+  sel.innerHTML=linked.map(s=>`<option value="${s.id}">${s.name} (${s.classCount} cls)</option>`).join('');
+  pol.targetStackId=(prev&&linked.find(s=>s.id===prev))?prev:linked[0].id;
+  sel.value=pol.targetStackId;
 }
 // Explicit target switch (dropdown onchange, or a stack's STAR icon being loaded while it's
 // the current target): always (re)syncs from that stack's linked star, if any.
@@ -3152,7 +3141,10 @@ function updPolTargetOptions(){
 
 function updPolStatus(){
   const el=document.getElementById('pol-status');
-  if(!pol.presentClasses){el.textContent='No STAR loaded.';return;}
+  if(!pol.presentClasses){
+    el.textContent=stacks.some(s=>s.star)?'Select a target stack above.':'No STAR linked yet - link one via the STACKS panel above.';
+    return;
+  }
   const stack=getStack(pol.targetStackId);
   let msg=`STAR: ${pol.starName}<br>Particles: ${pol.nPart} &middot; Filaments: ${pol.nFil} &middot; Classes: ${pol.presentClasses.length}`;
   if(!pol.hasProb)msg+=`<br><span style="color:var(--gold)">no _rlnMaxValueProbDistribution - using uniform weights</span>`;
@@ -3303,7 +3295,7 @@ function invertPolarity(){
 // This is deliberately independent of the image-based overlap-NCC crossover solver
 // (solveCrossover, further down) - agreement between the two is evidence the estimate
 // is real rather than an artifact of one method.
-let coordXo={starName:null,var_:null,data:null,distances:null,crossoverA:null};
+let coordXo={starName:null,var_:null,data:null,distances:null,crossoverA:null,targetStackId:null,polymorph:'all'};
 
 function buildCoordXoData(varArr,dataArr){
   const colMic=varArr.indexOf('_rlnMicrographName');
@@ -3315,28 +3307,110 @@ function buildCoordXoData(varArr,dataArr){
   return{colMic,colTube,colCls,colX,colY};
 }
 // Applies an already-parsed raw STAR ({starName,var_,data,optics}) to the coordinate-based
-// Crossover solver's working state. Shared by a fresh file upload and auto-adopting any
-// already-linked stack star (coordXo has no per-stack target of its own - see
-// autoFillCoordXoFromLinkedStars).
+// Crossover solver's working state. Only ever called for the currently-selected target
+// stack's linked star (see xoSetTarget/updCoordXoTargetOptions) - like CHEP/Polarity,
+// loading a particle file happens exclusively via the STACKS panel's LINK STAR control.
 function applyStarToCoordXo(starRaw,silent){
   const cols=buildCoordXoData(starRaw.var_,starRaw.data);
   if(!cols){if(!silent)alert('STAR file is missing a required column: _rlnMicrographName, _rlnHelicalTubeID, _rlnClassNumber, _rlnCoordinateX, _rlnCoordinateY');return false;}
   coordXo.starName=starRaw.starName;coordXo.var_=starRaw.var_;coordXo.data=starRaw.data;coordXo.distances=null;coordXo.crossoverA=null;
-  document.getElementById('xo-status').innerHTML=`STAR: ${starRaw.starName}<br>Particles: ${starRaw.data.length}`;
   document.getElementById('xo-cnt').textContent='(0)';
-  document.getElementById('xo-run-btn').disabled=false;
   document.getElementById('xo-apply-btn').disabled=true;
   document.getElementById('xo-hist-canvas').style.display='none';
   document.getElementById('xo-result').textContent='';
   return true;
 }
-function loadCoordXoStarFile(e){
-  const f=e.target.files[0];if(!f)return;
-  readParticleFile(f,
-    starRaw=>applyStarToCoordXo(starRaw),
-    err=>alert('STAR/CS parse error: '+err.message)
-  );
-  e.target.value='';
+// Rebuilds the target-stack <select> and picks/keeps a target, WITHOUT touching coordXo's
+// already-loaded star data (used when the stack list changes, not when switching target).
+// Only stacks with a linked STAR are listed, same as CHEP/Polarity.
+function refreshXoTargetDropdown(){
+  const sel=document.getElementById('xo-target-stack');
+  const linked=stacks.filter(s=>s.star);
+  document.getElementById('xo-target-row').style.display=stacks.length?'':'none';
+  if(!linked.length){
+    sel.innerHTML='<option value="">-- no linked STAR files --</option>';
+    sel.disabled=true;
+    coordXo.targetStackId=null;
+    return;
+  }
+  sel.disabled=false;
+  const prev=coordXo.targetStackId;
+  sel.innerHTML=linked.map(s=>`<option value="${s.id}">${s.name} (${s.classCount} cls)</option>`).join('');
+  coordXo.targetStackId=(prev&&linked.find(s=>s.id===prev))?prev:linked[0].id;
+  sel.value=coordXo.targetStackId;
+}
+// Explicit target switch (dropdown onchange, or a stack's STAR being (re)linked while it's
+// the current target): always (re)syncs from that stack's linked star, if any.
+function xoSetTarget(stackId){
+  coordXo.targetStackId=stackId;
+  const sel=document.getElementById('xo-target-stack');if(sel&&stackId!=null)sel.value=stackId;
+  const stk=stackId!=null?getStack(stackId):null;
+  if(stk?.star)applyStarToCoordXo(stk.star,true);
+  updXoPolymorphOptions();
+  updXoStatus();
+  document.getElementById('xo-run-btn').disabled=!(coordXo.data&&coordXo.targetStackId);
+}
+function updCoordXoTargetOptions(){
+  refreshXoTargetDropdown();
+  if(coordXo.targetStackId!=null&&!coordXo.data){
+    const stk=getStack(coordXo.targetStackId);
+    if(stk?.star)applyStarToCoordXo(stk.star,true);
+  }
+  updXoPolymorphOptions();
+  updXoStatus();
+  document.getElementById('xo-run-btn').disabled=!(coordXo.data&&coordXo.targetStackId);
+}
+// Shows the POLYMORPH dropdown only when the target stack's classes have actually been
+// split into 2+ distinct polymorphs (via CHEP or manual assignment on the class averages) -
+// lets the crossover finder be scoped to one polymorph's particles instead of always
+// pooling the whole stack. Degrades gracefully (dropdown hidden, "all" implied) when CHEP
+// hasn't been run/assigned for this stack.
+function updXoPolymorphOptions(){
+  const row=document.getElementById('xo-poly-row');
+  const sel=document.getElementById('xo-poly-select');
+  const stack=getStack(coordXo.targetStackId);
+  const present=new Set();
+  if(stack&&chep.classLabel){
+    for(let gid=stack.classIdStart;gid<stack.classIdStart+stack.classCount;gid++){
+      const cl=chep.classLabel[gid];
+      if(cl>0)present.add(cl);
+    }
+  }
+  if(present.size<2){
+    row.style.display='none';
+    coordXo.polymorph='all';
+    return;
+  }
+  row.style.display='';
+  const clusters=[...present].sort((a,b)=>a-b);
+  const prev=coordXo.polymorph;
+  sel.innerHTML='<option value="all">All polymorphs</option>'+clusters.map(cl=>`<option value="${cl}">${escapeHtml(chepGroupLabel(cl))}</option>`).join('');
+  coordXo.polymorph=(prev!=='all'&&clusters.includes(prev))?prev:'all';
+  sel.value=coordXo.polymorph;
+}
+function xoSetPolymorph(val){
+  coordXo.polymorph=val==='all'?'all':parseInt(val,10);
+}
+function updXoStatus(){
+  const el=document.getElementById('xo-status');
+  if(!coordXo.data){
+    el.textContent=stacks.some(s=>s.star)?'Select a target stack above.':'No STAR linked yet - link one via the STACKS panel above.';
+    return;
+  }
+  const stack=getStack(coordXo.targetStackId);
+  let msg=`STAR: ${coordXo.starName}<br>Particles: ${coordXo.data.length}`;
+  if(stack)msg+=`<br>Target stack: ${stack.name} (${stack.classCount} classes)`;
+  else msg+=`<br><span style="color:var(--gold)">select a target stack</span>`;
+  el.innerHTML=msg;
+}
+function resetCoordXo(){
+  coordXo.starName=null;coordXo.var_=null;coordXo.data=null;coordXo.distances=null;coordXo.crossoverA=null;coordXo.polymorph='all';
+  document.getElementById('xo-cnt').textContent='(0)';
+  document.getElementById('xo-run-btn').disabled=true;
+  document.getElementById('xo-apply-btn').disabled=true;
+  document.getElementById('xo-hist-canvas').style.display='none';
+  document.getElementById('xo-result').textContent='';
+  document.getElementById('xo-poly-row').style.display='none';
 }
 
 // Topographic-prominence peak finder over a 1D array (histogram counts), matching the
@@ -3366,7 +3440,7 @@ function findPeaksProminence(y,minProminence){
 }
 
 function computeCoordCrossover(){
-  if(!coordXo.data){alert('Load a particle .star first.');return;}
+  if(!coordXo.data||!coordXo.targetStackId){alert('Select a target stack with a linked STAR file first (see the STACKS panel).');return;}
   const angpixMic=+document.getElementById('xo-angpix').value||0;
   if(angpixMic<=0){alert('Enter the MICROGRAPH pixel size (Å) the coordinates were picked at - not the extracted-particle box pixel size, which is often different (binned).');return;}
   const minPart=Math.max(1,parseInt(document.getElementById('xo-minpart').value,10)||20);
@@ -3375,9 +3449,23 @@ function computeCoordCrossover(){
   const rise=+document.getElementById('xo-rise').value||4.75;
   const{colMic,colTube,colCls,colX,colY}=buildCoordXoData(coordXo.var_,coordXo.data);
 
+  // Scope to a single polymorph when the POLYMORPH dropdown selects one instead of "all" -
+  // maps each row's local (1-indexed) STAR class number to the global class id space via
+  // this stack's classIdStart, then checks it against CHEP's (or manually assigned)
+  // class->polymorph labeling, same offset trick runChep/runPolarity use.
+  let rows=coordXo.data;
+  const polyScoped=coordXo.polymorph!=='all';
+  if(polyScoped){
+    const stack=getStack(coordXo.targetStackId);
+    if(stack&&chep.classLabel){
+      rows=rows.filter(row=>chep.classLabel[stack.classIdStart+(parseInt(row[colCls],10)-1)]===coordXo.polymorph);
+    }
+  }
+  const polyLabel=polyScoped?chepGroupLabel(coordXo.polymorph):'All polymorphs';
+
   // Group rows by filament (micrograph+tube), then within each filament by class.
   const filaments=new Map();  // filamentHash -> array of row
-  for(const row of coordXo.data){
+  for(const row of rows){
     const key=row[colMic]+'|'+row[colTube];
     let arr=filaments.get(key);if(!arr){arr=[];filaments.set(key,arr);}
     arr.push(row);
@@ -3401,7 +3489,7 @@ function computeCoordCrossover(){
       }
     }
   }
-  if(!distances.length){alert(`No same-class particle pairs found within any filament (>${minPart} particles/filament, ${nFilTotal} filaments total). Try lowering MIN PART.`);return;}
+  if(!distances.length){alert(`No same-class particle pairs found within any filament (>${minPart} particles/filament, ${nFilTotal} filaments total, ${polyLabel}). Try lowering MIN PART${polyScoped?', or switch POLYMORPH to All':''}.`);return;}
 
   // Equal-width histogram spanning [min,max] (matplotlib's default plt.hist binning),
   // padded by a small margin on both sides. Padding matters here specifically: the
@@ -3429,7 +3517,7 @@ function computeCoordCrossover(){
   document.getElementById('xo-hist-canvas').style.display='';
 
   if(!peaks.length){
-    document.getElementById('xo-result').innerHTML=`<span style="color:var(--gold)">No peaks found</span> at prominence ${(prom*100).toFixed(0)}% (${distances.length} distances, ${nFilUsed}/${nFilTotal} filaments used). Try lowering PROMINENCE.`;
+    document.getElementById('xo-result').innerHTML=`<span style="color:var(--gold)">No peaks found</span> at prominence ${(prom*100).toFixed(0)}% (${distances.length} distances, ${nFilUsed}/${nFilTotal} filaments used, ${polyLabel}). Try lowering PROMINENCE.`;
     document.getElementById('xo-apply-btn').disabled=true;
     coordXo.crossoverA=null;
     document.getElementById('xo-cnt').textContent='(0)';
@@ -3443,6 +3531,7 @@ function computeCoordCrossover(){
   document.getElementById('xo-cnt').textContent=`(${peaks.length})`;
   document.getElementById('xo-result').innerHTML=
     `<b style="color:var(--gold)">Crossover (coord-based): ${crossoverA.toFixed(1)} Å</b> (peak 1 of ${peaks.length})<br>`+
+    (polyScoped?`Polymorph: <b>${escapeHtml(polyLabel)}</b><br>`:'')+
     `Twist at rise ${rise} Å: &plusmn;${twist.toFixed(2)}&deg;<br>`+
     `${distances.length} same-class distances &middot; ${nFilUsed}/${nFilTotal} filaments (&gt;${minPart} particles)<br>`+
     (peaks.length>1?`Other peaks: ${peaks.slice(1).map(p=>centers[p].toFixed(0)).join(', ')} Å (multiples of the crossover)`:'');
@@ -3664,6 +3753,10 @@ function updThumbFilterDropdown(){
   // keep the current filter if it still exists, else fall back to All
   sel.value=[...sel.options].some(o=>o.value===cur)?cur:'all';
   if(sel.value!==cur)thumbFilterMode='all';
+  // Every class->polymorph assignment change (CHEP run, manual assign/unassign, group
+  // add/remove, session load) routes through here, so this is also the single choke
+  // point to keep Crossover(coords)'s own POLYMORPH dropdown in sync.
+  updXoPolymorphOptions();
 }
 function thumbVisible(cls){
   switch(thumbFilterMode){
@@ -4127,7 +4220,6 @@ function snapROIToContent(){
   if(wSum<1e-6)return;roi={x:roi.x,y:originY+sy+posSum/wSum-rH/2,w:roi.w,h:roi.h,rot:roi.rot||0};
   syncROICtrl();updROIBadge();render();
 }
-function snapROIToCanvas(){const cx=s2w(MC.width/2,MC.height/2);if(!roi)roi={x:0,y:0,w:100,h:60};roi.x=cx.x-roi.w/2;roi.y=cx.y-roi.h/2;syncROICtrl();updROIBadge();render();}
 
 function selectInst(uid){
   selUid=uid;const inst=getInst(uid);const cls=getCls(inst?.classId);if(!inst||!cls)return;
@@ -4213,8 +4305,8 @@ function nccRaw(pxA,wA,hA,pxB,wB,hB,ox,oy,thr=1e-10){
 async function runOpt(){
   const uidA=markedUids[0],uidB=markedUids[1];if(!uidA||!uidB){alert('Mark REF (A) and MOV (B) first.');return;}
   const iA=getInst(uidA),iB=getInst(uidB);const cA=getCls(iA.classId),cB=getCls(iB.classId);
-  const trR=Math.max(1,+document.getElementById('al-tr').value||20),trS=Math.max(1,+document.getElementById('al-ts').value||2);
-  const rotR=Math.max(0,+document.getElementById('al-rr').value||15),rotS=Math.max(0.1,+document.getElementById('al-rs').value||3);
+  const trR=Math.max(1,+document.getElementById('al-tr').value||10),trS=Math.max(1,+document.getElementById('al-ts').value||1);
+  const rotR=Math.max(0,+document.getElementById('al-rr').value||3),rotS=Math.max(0.1,+document.getElementById('al-rs').value||0.1);
   document.getElementById('al-run-btn').disabled=true;document.getElementById('al-result').style.display='none';document.getElementById('al-apply-btn').style.display='none';
   document.getElementById('al-prog-row').style.display='';document.getElementById('al-prog').style.width='0%';
   const eA=extractRawFloat(cA,iA);const relX=iB.x-iA.x,relY=iB.y-iA.y;
@@ -4280,7 +4372,7 @@ function saveState(){
     classFlip:pol.classFlip,presentCount:pol.presentClasses?pol.presentClasses.length:Object.keys(pol.classFlip).length}:null;
   const gv=id=>document.getElementById(id);
   const helixParams={co:+gv('stitch-co').value||150,opt:gv('stitch-opt').checked,flip:gv('stitch-flip').checked,ymode:gv('stitch-ymode').value,fade:+gv('stitch-fade').value||20,niter:+gv('stitch-niter').value||5,sx:+gv('stitch-sx').value||15,sy:+gv('stitch-sy').value||8,overlapWeight:overlapWeightMode,overlapCount:overlapUseCount,overlapDist:overlapUseDist,overlapDistPow:overlapDistPow};
-  const alignParams={tr:+gv('al-tr').value||20,ts:+gv('al-ts').value||2,rr:+gv('al-rr').value||15,rs:+gv('al-rs').value||3};
+  const alignParams={tr:+gv('al-tr').value||10,ts:+gv('al-ts').value||1,rr:+gv('al-rr').value||3,rs:+gv('al-rs').value||0.1};
   const state={version:8,savedAt:new Date().toISOString(),classCount:classes.length,pixelSize:+gv('px-inp').value||1,displayScale:+gv('dscale').value,thumbH,cMode,cMin,cMax,cManLo,cManHi,cGamma,cBright,inverted,colormap:gv('colormap').value,helix:helixParams,align:alignParams,stacks:stacks.map(({star,...s})=>s),instances:instances.map(i=>({...i})),markedUids:[...markedUids],multiSel:[...multiSel],roi:roi?{...roi}:null,chep:chepState,pol:polState};
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='stitcher_state.json';a.click();URL.revokeObjectURL(url);
 }
@@ -4313,8 +4405,8 @@ function applyState(state){
     overlapDistPow=h.overlapDistPow||1;
     refreshOverlapUI();}
   if(state.align){const a=state.align;
-    document.getElementById('al-tr').value=a.tr??20;document.getElementById('al-ts').value=a.ts??2;
-    document.getElementById('al-rr').value=a.rr??15;document.getElementById('al-rs').value=a.rs??3;}
+    document.getElementById('al-tr').value=a.tr??10;document.getElementById('al-ts').value=a.ts??1;
+    document.getElementById('al-rr').value=a.rr??3;document.getElementById('al-rs').value=a.rs??0.1;}
   if(state.stacks)state.stacks.forEach(ss=>{const stk=getStack(ss.id);if(stk){stk.color=ss.color;const sw=document.getElementById(`swatch-${ss.id}`);if(sw)sw.style.background=ss.color;}});
   instances=[];(state.instances||[]).forEach(s=>{if(!getCls(s.classId))return;instances.push({...s});if(s.uid>=nextUid)nextUid=s.uid+1;});
   markedUids=state.markedUids||[null,null];roi=state.roi||null;optBest=null;undoStack=[];
